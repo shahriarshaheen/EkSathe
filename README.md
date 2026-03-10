@@ -67,6 +67,7 @@ EkSathe
 │
 ├── client/ # React frontend
 │
+
 ├── server/ # Express backend
 │ ├── src
 │ │ ├── config
@@ -78,10 +79,12 @@ EkSathe
 │ │ ├── utils
 │ │ └── validators
 │
+
 ├── docs/ # Project documentation
 │ ├── srs_documentation.md
 │ └── class-diagram-v1.drawio.png
 │
+
 └── README.md
 
 ---
