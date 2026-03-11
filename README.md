@@ -1,211 +1,266 @@
 # EkSathe
 
-EkSathe is a MERN-stack platform designed to help students find parking, carpool opportunities, and safer mobility options around university areas.
+EkSathe is a secure housing platform designed to help university students find trusted accommodation while allowing homeowners to list verified rental spaces.
 
-The goal of the project is to reduce transportation problems faced by students in Dhaka by providing a centralized digital platform for parking discovery, ride sharing, and safety features.
-
----
-
-# Current Development Status
-
-This project is currently under active development.
-
-## Implemented (Backend Authentication v1)
-
-The backend authentication system has been implemented using Node.js, Express, MongoDB, and JWT.
-
-Features implemented:
-
-- User registration
-- Email OTP verification
-- Login with JWT authentication
-- Protected route middleware
-- Role-based authorization middleware
-- Get current authenticated user (`/api/auth/me`)
-- Logout endpoint
-- Forgot password
-- Reset password
+This repository currently contains the **authentication system and frontend interface for user accounts**.
 
 ---
 
-# Planned Modules
+# Project Structure
 
-The following modules are planned for future development:
+EkSathe is built as a **full-stack application** with separate client and server.
 
-- Parking marketplace
-- Carpool ride sharing
-- Safety verification features
-- Smart parking availability detection
-- Admin dashboard
-- Notifications and alerts
-- Maps and route support
+Eksathe/
+│
+├── client/ # React frontend (Vite + Tailwind)
+├── server/ # Node.js backend (Express + MongoDB)
+├── docs/ # Documentation (SRS, diagrams, API plans)
+└── README.md
 
 ---
 
 # Tech Stack
 
-## Backend
+### Frontend
+
+- React (Vite)
+- TailwindCSS
+- React Router
+- Axios
+- React Hook Form
+- Zod
+- Sonner (toast notifications)
+
+### Backend
 
 - Node.js
 - Express.js
-- MongoDB Atlas
+- MongoDB (Atlas)
 - Mongoose
-- JWT (jsonwebtoken)
-- bcrypt
-- Nodemailer
-- Express Validator
-
-## Frontend
-
-- React
-- Vite
+- JWT Authentication
+- bcrypt password hashing
+- Nodemailer (email service)
 
 ---
 
-# Project Structure
-EkSathe
-│
-├── client/ # React frontend
-│
+# Authentication Features (Completed)
 
-├── server/ # Express backend
-│ ├── src
-│ │ ├── config
-│ │ ├── controllers
-│ │ ├── middleware
-│ │ ├── models
-│ │ ├── routes
-│ │ ├── services
-│ │ ├── utils
-│ │ └── validators
-│
+The platform currently supports a full authentication flow.
 
-├── docs/ # Project documentation
-│ ├── srs_documentation.md
-│ └── class-diagram-v1.drawio.png
-│
+### User Registration
 
-└── README.md
+Users can create an account with:
+
+- Name
+- Email
+- Phone
+- Password
+- Role (student / homeowner)
+
+After registration:
+
+- A **6-digit OTP is generated**
+- OTP is sent via email
+- Account status is `pending_verification`
 
 ---
 
-# Authentication API
+### Email Verification
 
-These backend authentication routes are currently implemented.
+Users verify their account using the OTP sent to their email.
 
-## Register
+Verification logic includes:
+
+- OTP validation
+- OTP expiry check
+- Account activation after successful verification
+
+---
+
+### Login
+
+Users can log in using:
+
+- Email
+- Password
+
+Security checks include:
+
+- Password verification
+- Email verification status
+- Suspended account check
+
+On success:
+
+- JWT token is issued
+- Token contains:
+
+id
+role
+status
+
+---
+
+### Authentication Middleware
+
+Protected routes are secured using:
+
+**authenticate middleware**
+
+- Verifies JWT
+- Extracts user identity
+- Attaches `{ id, role, status }` to `req.user`
+
+**authorize middleware**
+
+- Restricts access based on roles
+- Example:
+
+authorize("admin")
+authorize("student","homeowner")
+
+---
+
+### Current API Endpoints
+
+Auth routes implemented:
+
 POST /api/auth/register
-
-Creates a new user account.
-
----
-
-## Verify Email
 POST /api/auth/verify-email
-
-Verifies the user's email using the OTP sent during registration.
-
----
-
-## Login
 POST /api/auth/login
-
-Authenticates the user and returns a JWT token.
-
----
-
-## Get Current User
 GET /api/auth/me
-
-Returns the currently authenticated user's profile.
-
-This route requires an authorization header:
-Authorization: Bearer <token>
-
----
-
-## Logout
 POST /api/auth/logout
-
-
-Stateless logout. The client must discard the JWT token.
-
----
-
-## Forgot Password
 POST /api/auth/forgot-password
-
-
-Generates a password reset token and sends a reset email.
-
----
-
-## Reset Password
 POST /api/auth/reset-password
 
+---
 
-Allows the user to set a new password using the reset token.
+# Frontend Features (Completed)
+
+The React client includes a full authentication UI.
+
+Pages implemented:
+
+Register
+Verify Email (OTP input)
+Login
+Forgot Password
+Reset Password
+Dashboard (protected)
 
 ---
 
-# Setup
+### UI Highlights
 
-## Backend Setup
+- Clean editorial design
+- TailwindCSS styling
+- OTP input component with auto-focus
+- Form validation using Zod
+- Toast notifications for feedback
+- Protected routes using AuthContext
+
+---
+
+# Environment Setup
+
+## Backend
+
+Create `.env` inside `server/`
+
+PORT=5000
+MONGO_URI=your_mongodb_uri
+JWT_SECRET=your_jwt_secret
+CLIENT_URL=http://localhost:5173
+
+EMAIL_USER=your_email
+EMAIL_PASS=your_email_password
+
+Run backend:
+
 cd server
 npm install
 npm run dev
 
-
-Server runs on:
-http://localhost:5000
-
-
 ---
 
-## Frontend Setup
+## Frontend
+
+Create `.env` inside `client/`
+
+VITE_API_URL=http://localhost:5000/api
+
+Run frontend:
+
 cd client
 npm install
 npm run dev
 
-Frontend runs on:
+Frontend runs at:
+
 http://localhost:5173
-
----
-
-# Environment Variables
-
-Create a `.env` file inside the `server` folder using `.env.example`.
-
-Example:
-PORT=5000
-MONGODB_URI=
-JWT_SECRET=
-CLIENT_URL=http://localhost:5173
-
-EMAIL_USER=
-EMAIL_PASS=
 
 ---
 
 # Documentation
 
-Project planning and documentation files are stored in the `docs` folder.
+Project documentation is available in the `/docs` folder.
 
-These include:
+Includes:
 
-- Software Requirement Specification (SRS)
-- System architecture diagrams
-
----
-
-# Project Status
-
-This repository is under active development as part of a university project.
-
-Additional modules such as parking services, ride sharing, and safety features will be implemented in future updates.
+- SRS document
+- System diagrams
+- Auth API planning
 
 ---
 
-# License
+# Development Workflow
 
-This project is created for educational purposes.
+Team members should follow this workflow:
+
+1. Clone repository
+2. Create a new feature branch
+
+git checkout -b feature/feature-name
+
+3. Make changes
+4. Commit changes
+
+git add .
+git commit -m "feature: description"
+
+5. Push branch
+
+git push origin feature/feature-name
+
+6. Open a Pull Request to `main`
+
+Direct pushes to `main` should be avoided.
+
+---
+
+# Current Development Stage
+
+Completed:
+
+- Backend authentication system
+- Email verification
+- Password reset system
+- React authentication UI
+- Protected routes
+- Auth context
+
+Next planned features:
+
+- Property listing system
+- Student housing search
+- Booking requests
+- Review and trust score system
+- Admin moderation tools
+
+---
+
+# Contributors
+
+EkSathe Development Team
+
+University Software Engineering Project
