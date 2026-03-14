@@ -13,10 +13,10 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 | Authentication System                  | ✅ Complete               |
 | Role-based Dashboards                  | ✅ Complete               |
 | Parking Spot Listing (F-01)            | ✅ Complete               |
-| Interactive Map View (F-02)            | 🔲 Sprint 1 — In Progress |
+| Interactive Map View (F-02)            | ✅ Complete               |
 | Booking Calendar System (F-03)         | 🔲 Sprint 1 — In Progress |
 | SSLCommerz Payment (F-04)              | 🔲 Sprint 1 — In Progress |
-| Homeowner Earnings Dashboard (F-05)    | 🔲 Sprint 1 — In Progress |
+| Homeowner Earnings Dashboard (F-05)    | ✅ Complete               |
 | Carpooling Network (F-06 to F-10)      | 🔲 Sprint 2               |
 | Safety & Trust (F-11 to F-15)          | 🔲 Sprint 3               |
 | Smart Features & Deploy (F-16 to F-20) | 🔲 Sprint 4               |
@@ -47,6 +47,8 @@ EkSathe/
 - Sonner (toast notifications)
 - Lucide React (icons)
 - React Dropzone (photo uploads)
+- Leaflet + React Leaflet (interactive maps)
+- Recharts (earnings charts)
 
 ### Backend
 
@@ -121,6 +123,32 @@ GET    /api/parking/my/listings  # Own listings (homeowner)
 PUT    /api/parking/:id          # Update listing (homeowner)
 DELETE /api/parking/:id          # Delete listing (homeowner)
 ```
+
+---
+
+### Interactive Map View (F-02)
+
+Students can browse all available parking spots on an interactive map.
+
+- Full screen map powered by Leaflet + OpenStreetMap (no API key needed)
+- Green markers for every active parking spot from the database
+- Click marker → popup with title, price and quick view button
+- Side panel with full spot details — photos, hours, days, owner info
+- Near me button — detects user location and flies map to their area
+- Blue marker shows user's current location
+- No Google Maps API key required — fully free
+
+---
+
+### Homeowner Earnings Dashboard (F-05)
+
+Homeowners can track their income and listing performance.
+
+- Stats overview — total earnings, bookings, active listings, avg per booking
+- Monthly earnings bar chart using Recharts (last 6 months)
+- Listing performance table — photo, title, price, booking count, status
+- Live data updates as bookings come in (Sprint 1 booking system)
+- Empty states with call to action for new homeowners
 
 ---
 
