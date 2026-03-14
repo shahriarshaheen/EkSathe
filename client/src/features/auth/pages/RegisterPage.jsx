@@ -56,7 +56,7 @@ const RegisterPage = () => {
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-stone-700">I am a</label>
           <div className="grid grid-cols-2 gap-2">
-            {["student", "homeowner"].map((r) => (
+            {["student", "homeowner", "admin"].map((r) => (
               <label
                 key={r}
                 className={cn(
@@ -72,7 +72,11 @@ const RegisterPage = () => {
                   className="sr-only"
                   {...register("role")}
                 />
-                {r === "student" ? "Student" : "Homeowner"}
+                {r === "student"
+                  ? "Student"
+                  : r === "homeowner"
+                    ? "Homeowner"
+                    : "Admin"}
               </label>
             ))}
           </div>

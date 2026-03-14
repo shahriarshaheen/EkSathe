@@ -25,7 +25,7 @@ export const registerSchema = z
         "Password must contain at least one letter and one number",
       ),
     confirmPassword: z.string().min(1, "Please confirm your password"),
-    role: z.enum(["student", "homeowner"], {
+    role: z.enum(["student", "homeowner", "admin"], {
       errorMap: () => ({ message: "Please select a role" }),
     }),
     studentId: z.string().trim().optional(),

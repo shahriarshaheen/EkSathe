@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import CreateListingPage from "./features/parking/pages/CreateListingPage";
+import MyListingsPage from "./features/parking/pages/MyListingsPage";
 
 // Auth pages
 import RegisterPage from "./features/auth/pages/RegisterPage";
@@ -45,6 +47,22 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/create-listing"
+            element={
+              <ProtectedRoute>
+                <CreateListingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/my-listings"
+            element={
+              <ProtectedRoute>
+                <MyListingsPage />
               </ProtectedRoute>
             }
           />
