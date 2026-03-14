@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   MapPin,
   Car,
@@ -13,12 +14,7 @@ import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
-  {
-    path: "/dashboard/parking",
-    label: "Find Parking",
-    icon: MapPin,
-    soon: true,
-  },
+  { path: "/dashboard/parking", label: "Find Parking", icon: MapPin },
   { path: "/dashboard/carpool", label: "Carpooling", icon: Car, soon: true },
   { path: "/dashboard/sos", label: "SOS & Safety", icon: Shield, soon: true },
   {
@@ -30,9 +26,7 @@ const navItems = [
 ];
 
 const StatCard = ({ label, value, sub, accent }) => (
-  <div
-    className={`bg-white rounded-xl border border-stone-200 p-5 flex flex-col gap-1`}
-  >
+  <div className="bg-white rounded-xl border border-stone-200 p-5 flex flex-col gap-1">
     <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">
       {label}
     </p>
@@ -43,8 +37,11 @@ const StatCard = ({ label, value, sub, accent }) => (
   </div>
 );
 
-const QuickCard = ({ icon: Icon, title, desc, badge, color }) => (
-  <div className="bg-white rounded-xl border border-stone-200 p-5 flex gap-4 items-start hover:border-stone-300 transition-colors cursor-pointer">
+const QuickCard = ({ icon: Icon, title, desc, badge, color, onClick }) => (
+  <div
+    onClick={onClick}
+    className="bg-white rounded-xl border border-stone-200 p-5 flex gap-4 items-start hover:border-stone-300 hover:shadow-sm transition-all cursor-pointer"
+  >
     <div
       className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}
     >
@@ -78,6 +75,7 @@ const ActivityRow = ({ icon: Icon, text, time, color }) => (
 
 const StudentDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const firstName = user?.name?.split(" ")[0] || "there";
 
   return (
@@ -121,8 +119,8 @@ const StudentDashboard = () => {
               icon={MapPin}
               title="Find Parking"
               desc="Discover available spots near your campus or destination."
-              badge="Coming soon"
               color="bg-teal-50 text-teal-600"
+              onClick={() => navigate("/dashboard/parking")}
             />
             <QuickCard
               icon={Car}

@@ -21,7 +21,6 @@ const navItems = [
     path: "/dashboard/earnings",
     label: "Earnings",
     icon: Banknote,
-    soon: true,
   },
   {
     path: "/dashboard/notifications",

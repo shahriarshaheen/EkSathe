@@ -4,6 +4,8 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import CreateListingPage from "./features/parking/pages/CreateListingPage";
 import MyListingsPage from "./features/parking/pages/MyListingsPage";
+import ParkingMapPage from "./features/parking/pages/ParkingMapPage";
+import EarningsDashboard from "./features/parking/pages/EarningsDashboard";
 
 // Auth pages
 import RegisterPage from "./features/auth/pages/RegisterPage";
@@ -63,6 +65,22 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <MyListingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/parking"
+            element={
+              <ProtectedRoute>
+                <ParkingMapPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/earnings"
+            element={
+              <ProtectedRoute>
+                <EarningsDashboard />
               </ProtectedRoute>
             }
           />
