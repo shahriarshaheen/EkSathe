@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -13,7 +13,6 @@ import {
   ParkingSquare,
   Clock,
   Calendar,
-  BadgeDollarSign,
   ArrowLeft,
 } from "lucide-react";
 
@@ -55,7 +54,6 @@ const CreateListingPage = () => {
   const {
     register,
     handleSubmit,
-    control,
     setValue,
     watch,
     formState: { errors },
@@ -89,9 +87,8 @@ const CreateListingPage = () => {
     },
   });
 
-  const removePhoto = (idx) => {
+  const removePhoto = (idx) =>
     setPhotos((prev) => prev.filter((_, i) => i !== idx));
-  };
 
   // ── Auto-detect location ──
   const detectLocation = () => {
@@ -137,13 +134,20 @@ const CreateListingPage = () => {
     setLoading(true);
     try {
       const formData = new FormData();
+
+      // Append all fields except availableDays
       Object.entries(data).forEach(([key, val]) => {
-        if (key === "availableDays") {
-          formData.append(key, JSON.stringify(val));
-        } else {
+        if (key !== "availableDays") {
           formData.append(key, val);
         }
       });
+
+      // Append each day separately so backend receives as array
+      data.availableDays.forEach((day) => {
+        formData.append("availableDays[]", day);
+      });
+
+      // Append photos
       photos.forEach((photo) => formData.append("photos", photo));
 
       await parkingService.createSpot(formData);
@@ -198,7 +202,7 @@ const CreateListingPage = () => {
           noValidate
           className="space-y-8"
         >
-          {/* ── Basic Info ── */}
+          {/* Basic Info */}
           <section className="bg-white rounded-xl border border-stone-200 p-6 space-y-5">
             <h2 className="font-semibold text-stone-800 text-sm uppercase tracking-wide">
               Basic Information
@@ -230,7 +234,6 @@ const CreateListingPage = () => {
               )}
             </div>
 
-            {/* Spot type */}
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-2">
                 Spot type
@@ -255,7 +258,7 @@ const CreateListingPage = () => {
             </div>
           </section>
 
-          {/* ── Location ── */}
+          {/* Location */}
           <section className="bg-white rounded-xl border border-stone-200 p-6 space-y-5">
             <h2 className="font-semibold text-stone-800 text-sm uppercase tracking-wide">
               Location
@@ -307,13 +310,13 @@ const CreateListingPage = () => {
             </div>
           </section>
 
-          {/* ── Pricing & Availability ── */}
+          {/* Pricing & Availability */}
           <section className="bg-white rounded-xl border border-stone-200 p-6 space-y-5">
             <h2 className="font-semibold text-stone-800 text-sm uppercase tracking-wide">
               Pricing & Availability
             </h2>
 
-            <div className="relative">
+            <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">
                 Price per day (৳)
               </label>
@@ -336,7 +339,6 @@ const CreateListingPage = () => {
               )}
             </div>
 
-            {/* Time range */}
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-2">
                 <Clock className="w-3.5 h-3.5 inline mr-1" />
@@ -360,7 +362,6 @@ const CreateListingPage = () => {
               </div>
             </div>
 
-            {/* Available days */}
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-2">
                 <Calendar className="w-3.5 h-3.5 inline mr-1" />
@@ -390,7 +391,7 @@ const CreateListingPage = () => {
             </div>
           </section>
 
-          {/* ── Photos ── */}
+          {/* Photos */}
           <section className="bg-white rounded-xl border border-stone-200 p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-stone-800 text-sm uppercase tracking-wide">
@@ -401,7 +402,6 @@ const CreateListingPage = () => {
               </span>
             </div>
 
-            {/* Previews */}
             {photos.length > 0 && (
               <div className="grid grid-cols-3 gap-3">
                 {photos.map((photo, idx) => (
@@ -426,7 +426,6 @@ const CreateListingPage = () => {
               </div>
             )}
 
-            {/* Dropzone */}
             {photos.length < 3 && (
               <div
                 {...getRootProps()}
@@ -450,7 +449,7 @@ const CreateListingPage = () => {
             )}
           </section>
 
-          {/* ── Submit ── */}
+          {/* Submit */}
           <div className="flex gap-3">
             <Button
               type="button"

@@ -46,10 +46,18 @@ export const validateCreateSpot = [
     .matches(/^([0-1]\d|2[0-3]):([0-5]\d)$/)
     .withMessage("Invalid time format — use HH:MM"),
 
-  body("availableDays")
+  body("availableDays[]")
     .optional()
-    .isArray({ min: 1 })
-    .withMessage("At least one available day is required"),
+    .isIn([
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ])
+    .withMessage("Invalid day value"),
 
   body("spotType")
     .optional()

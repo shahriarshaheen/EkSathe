@@ -13,9 +13,15 @@ export const createSpot = async (req, res) => {
       pricePerDay,
       availableFrom,
       availableTo,
-      availableDays,
       spotType,
     } = req.body;
+
+    // availableDays comes as availableDays[] from FormData
+    const availableDays = req.body["availableDays[]"]
+      ? Array.isArray(req.body["availableDays[]"])
+        ? req.body["availableDays[]"]
+        : [req.body["availableDays[]"]]
+      : ["monday", "tuesday", "wednesday", "thursday", "friday"];
 
     // Build photos array from uploaded files
     const photos = (req.files || []).map((file) => ({
@@ -36,9 +42,7 @@ export const createSpot = async (req, res) => {
       pricePerDay: parseFloat(pricePerDay),
       availableFrom,
       availableTo,
-      availableDays: availableDays
-        ? JSON.parse(availableDays)
-        : ["monday", "tuesday", "wednesday", "thursday", "friday"],
+      availableDays,
       spotType: spotType || "open",
     });
 
@@ -53,7 +57,7 @@ export const createSpot = async (req, res) => {
   }
 };
 
-// ── GET ALL SPOTS (with optional geo filter) ─────────────────
+// ── GET ALL SPOTS ────────────────────────────────────────────
 export const getSpots = async (req, res) => {
   try {
     const {
@@ -68,7 +72,6 @@ export const getSpots = async (req, res) => {
     let spots;
 
     if (latitude && longitude) {
-      // Geo query — find spots within radius (meters)
       spots = await ParkingSpot.find({
         ...query,
         location: {
@@ -85,7 +88,6 @@ export const getSpots = async (req, res) => {
         .skip((page - 1) * limit)
         .limit(parseInt(limit));
     } else {
-      // No geo filter — return all active spots
       spots = await ParkingSpot.find(query)
         .populate("owner", "name email trustScore")
         .sort({ createdAt: -1 })
@@ -115,35 +117,28 @@ export const getSpotById = async (req, res) => {
       "owner",
       "name email trustScore photoUrl",
     );
-
-    if (!spot) {
+    if (!spot)
       return res
         .status(404)
         .json({ success: false, message: "Spot not found." });
-    }
-
     return res.status(200).json({ success: true, spot });
   } catch (err) {
-    if (err.name === "CastError") {
+    if (err.name === "CastError")
       return res
         .status(404)
         .json({ success: false, message: "Spot not found." });
-    }
-    console.error("getSpotById error:", err);
     return res.status(500).json({ success: false, message: "Server error." });
   }
 };
 
-// ── GET MY SPOTS (homeowner's own listings) ──────────────────
+// ── GET MY SPOTS ─────────────────────────────────────────────
 export const getMySpots = async (req, res) => {
   try {
     const spots = await ParkingSpot.find({ owner: req.user.id }).sort({
       createdAt: -1,
     });
-
     return res.status(200).json({ success: true, spots });
   } catch (err) {
-    console.error("getMySpots error:", err);
     return res.status(500).json({ success: false, message: "Server error." });
   }
 };
@@ -152,19 +147,14 @@ export const getMySpots = async (req, res) => {
 export const updateSpot = async (req, res) => {
   try {
     const spot = await ParkingSpot.findById(req.params.id);
-
-    if (!spot) {
+    if (!spot)
       return res
         .status(404)
         .json({ success: false, message: "Spot not found." });
-    }
-
-    // Only the owner can update
-    if (spot.owner.toString() !== req.user.id) {
+    if (spot.owner.toString() !== req.user.id)
       return res
         .status(403)
         .json({ success: false, message: "Not authorized." });
-    }
 
     const {
       title,
@@ -175,7 +165,6 @@ export const updateSpot = async (req, res) => {
       pricePerDay,
       availableFrom,
       availableTo,
-      availableDays,
       spotType,
       isActive,
     } = req.body;
@@ -183,25 +172,27 @@ export const updateSpot = async (req, res) => {
     if (title) spot.title = title;
     if (description !== undefined) spot.description = description;
     if (address) spot.address = address;
-    if (latitude && longitude) {
+    if (latitude && longitude)
       spot.location = {
         type: "Point",
         coordinates: [parseFloat(longitude), parseFloat(latitude)],
       };
-    }
     if (pricePerDay) spot.pricePerDay = parseFloat(pricePerDay);
     if (availableFrom) spot.availableFrom = availableFrom;
     if (availableTo) spot.availableTo = availableTo;
-    if (availableDays) spot.availableDays = JSON.parse(availableDays);
-    if (spotType) spot.spotType = spotType;
-    if (isActive !== undefined) spot.isActive = isActive;
+    if (isActive !== undefined)
+      spot.isActive = isActive === "true" || isActive === true;
 
-    // Handle new photos if uploaded
+    const availableDays = req.body["availableDays[]"];
+    if (availableDays) {
+      spot.availableDays = Array.isArray(availableDays)
+        ? availableDays
+        : [availableDays];
+    }
+
     if (req.files && req.files.length > 0) {
-      // Delete old photos from Cloudinary
-      for (const photo of spot.photos) {
+      for (const photo of spot.photos)
         await cloudinary.uploader.destroy(photo.publicId);
-      }
       spot.photos = req.files.map((file) => ({
         url: file.path,
         publicId: file.filename,
@@ -209,12 +200,9 @@ export const updateSpot = async (req, res) => {
     }
 
     await spot.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Spot updated successfully.",
-      spot,
-    });
+    return res
+      .status(200)
+      .json({ success: true, message: "Spot updated successfully.", spot });
   } catch (err) {
     console.error("updateSpot error:", err);
     return res.status(500).json({ success: false, message: "Server error." });
@@ -225,33 +213,23 @@ export const updateSpot = async (req, res) => {
 export const deleteSpot = async (req, res) => {
   try {
     const spot = await ParkingSpot.findById(req.params.id);
-
-    if (!spot) {
+    if (!spot)
       return res
         .status(404)
         .json({ success: false, message: "Spot not found." });
-    }
-
-    // Only the owner can delete
-    if (spot.owner.toString() !== req.user.id) {
+    if (spot.owner.toString() !== req.user.id)
       return res
         .status(403)
         .json({ success: false, message: "Not authorized." });
-    }
 
-    // Delete photos from Cloudinary
-    for (const photo of spot.photos) {
+    for (const photo of spot.photos)
       await cloudinary.uploader.destroy(photo.publicId);
-    }
-
     await spot.deleteOne();
 
-    return res.status(200).json({
-      success: true,
-      message: "Spot deleted successfully.",
-    });
+    return res
+      .status(200)
+      .json({ success: true, message: "Spot deleted successfully." });
   } catch (err) {
-    console.error("deleteSpot error:", err);
     return res.status(500).json({ success: false, message: "Server error." });
   }
 };
