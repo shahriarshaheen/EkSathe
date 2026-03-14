@@ -1,266 +1,241 @@
-# EkSathe
+# EkSathe — Smart Campus Mobility & Parking Ecosystem
 
-EkSathe is a secure housing platform designed to help university students find trusted accommodation while allowing homeowners to list verified rental spaces.
+EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility platform built for Dhaka's students. It connects students with homeowners who have idle parking spaces, enables verified carpooling, and provides commute safety tools — all in one platform.
 
-This repository currently contains the **authentication system and frontend interface for user accounts**.
+> Built as a Software Engineering university project using the MERN stack.
 
 ---
 
-# Project Structure
+## Project Status
 
-EkSathe is built as a **full-stack application** with separate client and server.
+| Module                                 | Status                    |
+| -------------------------------------- | ------------------------- |
+| Authentication System                  | ✅ Complete               |
+| Role-based Dashboards                  | ✅ Complete               |
+| Parking Spot Listing (F-01)            | ✅ Complete               |
+| Interactive Map View (F-02)            | 🔲 Sprint 1 — In Progress |
+| Booking Calendar System (F-03)         | 🔲 Sprint 1 — In Progress |
+| SSLCommerz Payment (F-04)              | 🔲 Sprint 1 — In Progress |
+| Homeowner Earnings Dashboard (F-05)    | 🔲 Sprint 1 — In Progress |
+| Carpooling Network (F-06 to F-10)      | 🔲 Sprint 2               |
+| Safety & Trust (F-11 to F-15)          | 🔲 Sprint 3               |
+| Smart Features & Deploy (F-16 to F-20) | 🔲 Sprint 4               |
 
-Eksathe/
-│
-├── client/ # React frontend (Vite + Tailwind)
-├── server/ # Node.js backend (Express + MongoDB)
-├── docs/ # Documentation (SRS, diagrams, API plans)
+---
+
+## Project Structure
+
+```
+EkSathe/
+├── client/         # React frontend (Vite + Tailwind)
+├── server/         # Node.js backend (Express + MongoDB)
+├── docs/           # Documentation (SRS, diagrams, sprint plan)
 └── README.md
+```
 
 ---
 
-# Tech Stack
+## Tech Stack
 
 ### Frontend
 
-- React (Vite)
-- TailwindCSS
-- React Router
-- Axios
-- React Hook Form
-- Zod
+- React 18 + Vite
+- TailwindCSS v3
+- React Router v6
+- Axios (with interceptors)
+- React Hook Form + Zod
 - Sonner (toast notifications)
+- Lucide React (icons)
+- React Dropzone (photo uploads)
 
 ### Backend
 
-- Node.js
-- Express.js
-- MongoDB (Atlas)
-- Mongoose
-- JWT Authentication
-- bcrypt password hashing
+- Node.js (ES Modules)
+- Express 4.x
+- MongoDB Atlas + Mongoose
+- JWT Authentication (jsonwebtoken)
+- bcryptjs (password hashing)
 - Nodemailer (email service)
+- Multer + Cloudinary (photo uploads)
+- express-validator
 
 ---
 
-# Authentication Features (Completed)
+## Completed Features
 
-The platform currently supports a full authentication flow.
+### Authentication System
 
-### User Registration
+Full auth flow with JWT, OTP email verification, and role-based access.
 
-Users can create an account with:
+- Register with role selection (student / homeowner / admin)
+- Email OTP verification (6-digit, 1hr expiry)
+- Login with JWT (stateless, 7d expiry)
+- Forgot password + reset password via email link
+- JWT middleware — attaches `{ id, role, status }` to `req.user`
+- Role-based authorization middleware
 
-- Name
-- Email
-- Phone
-- Password
-- Role (student / homeowner)
+**Auth Endpoints:**
 
-After registration:
-
-- A **6-digit OTP is generated**
-- OTP is sent via email
-- Account status is `pending_verification`
-
----
-
-### Email Verification
-
-Users verify their account using the OTP sent to their email.
-
-Verification logic includes:
-
-- OTP validation
-- OTP expiry check
-- Account activation after successful verification
+```
+POST   /api/auth/register
+POST   /api/auth/verify-email
+POST   /api/auth/login
+GET    /api/auth/me
+POST   /api/auth/logout
+POST   /api/auth/forgot-password
+POST   /api/auth/reset-password
+```
 
 ---
 
-### Login
+### Role-based Dashboards
 
-Users can log in using:
+Each role gets a dedicated dashboard UI after login.
 
-- Email
-- Password
-
-Security checks include:
-
-- Password verification
-- Email verification status
-- Suspended account check
-
-On success:
-
-- JWT token is issued
-- Token contains:
-
-id
-role
-status
+- **Student Dashboard** — teal theme, campus-focused, parking/carpool/SOS cards
+- **Homeowner Dashboard** — amber theme, listings/bookings/earnings management
+- **Admin Dashboard** — purple theme, system status, moderation queue
 
 ---
 
-### Authentication Middleware
+### Parking Spot Listing (F-01)
 
-Protected routes are secured using:
+Homeowners can list their parking spots with full details and photos.
 
-**authenticate middleware**
+- Create listing with title, description, address, GPS coordinates
+- Upload up to 3 photos (stored on Cloudinary, auto-resized)
+- Set price per day in Bangladeshi Taka (৳)
+- Set available hours and days of the week
+- Choose spot type: garage, driveway, or open area
+- Auto-detect location via browser geolocation
+- View, activate/deactivate, and delete own listings
+- Geospatial indexing (2dsphere) for proximity queries
 
-- Verifies JWT
-- Extracts user identity
-- Attaches `{ id, role, status }` to `req.user`
+**Parking Endpoints:**
 
-**authorize middleware**
-
-- Restricts access based on roles
-- Example:
-
-authorize("admin")
-authorize("student","homeowner")
-
----
-
-### Current API Endpoints
-
-Auth routes implemented:
-
-POST /api/auth/register
-POST /api/auth/verify-email
-POST /api/auth/login
-GET /api/auth/me
-POST /api/auth/logout
-POST /api/auth/forgot-password
-POST /api/auth/reset-password
+```
+GET    /api/parking              # All active spots (public)
+GET    /api/parking/:id          # Single spot (public)
+POST   /api/parking              # Create listing (homeowner)
+GET    /api/parking/my/listings  # Own listings (homeowner)
+PUT    /api/parking/:id          # Update listing (homeowner)
+DELETE /api/parking/:id          # Delete listing (homeowner)
+```
 
 ---
 
-# Frontend Features (Completed)
+## Environment Setup
 
-The React client includes a full authentication UI.
+### Backend
 
-Pages implemented:
+Create `server/.env`:
 
-Register
-Verify Email (OTP input)
-Login
-Forgot Password
-Reset Password
-Dashboard (protected)
-
----
-
-### UI Highlights
-
-- Clean editorial design
-- TailwindCSS styling
-- OTP input component with auto-focus
-- Form validation using Zod
-- Toast notifications for feedback
-- Protected routes using AuthContext
-
----
-
-# Environment Setup
-
-## Backend
-
-Create `.env` inside `server/`
-
+```
 PORT=5000
-MONGO_URI=your_mongodb_uri
+MONGODB_URI=your_mongodb_atlas_connection_string
 JWT_SECRET=your_jwt_secret
 CLIENT_URL=http://localhost:5173
-
-EMAIL_USER=your_email
-EMAIL_PASS=your_email_password
+EMAIL_USER=your_gmail
+EMAIL_PASS=your_gmail_app_password
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
 
 Run backend:
 
+```bash
 cd server
 npm install
 npm run dev
+```
 
----
+### Frontend
 
-## Frontend
+Create `client/.env`:
 
-Create `.env` inside `client/`
-
+```
 VITE_API_URL=http://localhost:5000/api
+```
 
 Run frontend:
 
+```bash
 cd client
 npm install
 npm run dev
+```
 
-Frontend runs at:
+Frontend runs at `http://localhost:5173`
 
-http://localhost:5173
-
----
-
-# Documentation
-
-Project documentation is available in the `/docs` folder.
-
-Includes:
-
-- SRS document
-- System diagrams
-- Auth API planning
+> **Note:** `EMAIL_USER` and `EMAIL_PASS` are optional in development. If omitted, OTPs are logged to the terminal instead of being emailed.
 
 ---
 
-# Development Workflow
+## Sprint Plan
 
-Team members should follow this workflow:
+| Sprint | Theme               | Weeks | Goal                                                 |
+| ------ | ------------------- | ----- | ---------------------------------------------------- |
+| S1     | Parking Marketplace | 1–2   | Book and pay for parking spots                       |
+| S2     | Carpooling Network  | 3–4   | Post and join verified carpool rides                 |
+| S3     | Safety & Trust      | 5–6   | SOS, live tracking, incident reporting               |
+| S4     | Smart Features      | 7–8   | Push notifications, search, trust badges, deployment |
 
-1. Clone repository
-2. Create a new feature branch
+**Team assignments (5 features each):**
 
+| Teammate | Sprint 1                 | Sprint 2                   | Sprint 3              | Sprint 4                 |
+| -------- | ------------------------ | -------------------------- | --------------------- | ------------------------ |
+| Shahriar | F-01 Parking Listing     | F-08 Gender Filter         | F-11 SOS + F-15 Admin | F-17 Pricing Nudge       |
+| Sushmita | F-02 Map + F-05 Earnings | F-06 Post Carpool          | F-13 Deviation Alert  | F-16 Demand Indicator    |
+| Fauzia   | F-03 Booking Calendar    | F-07 Routes + F-10 Ratings | F-12 Live Sharing     | F-19 Search + F-20 Trust |
+| Tasnuva  | F-04 Payment             | F-09 Cost Splitter         | F-14 Incidents        | F-18 Push Notifications  |
+
+---
+
+## Development Workflow
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-org/eksathe.git
+
+# 2. Create a new feature branch
 git checkout -b feature/feature-name
 
-3. Make changes
-4. Commit changes
+# 3. Make your changes
 
+# 4. Commit
 git add .
-git commit -m "feature: description"
+git commit -m "feat: description of what you built"
 
-5. Push branch
-
+# 5. Push
 git push origin feature/feature-name
 
-6. Open a Pull Request to `main`
+# 6. Open a Pull Request to main
+```
 
-Direct pushes to `main` should be avoided.
+> Direct pushes to `main` are not allowed. All changes go through Pull Requests.
 
----
+**Commit message format:**
 
-# Current Development Stage
-
-Completed:
-
-- Backend authentication system
-- Email verification
-- Password reset system
-- React authentication UI
-- Protected routes
-- Auth context
-
-Next planned features:
-
-- Property listing system
-- Student housing search
-- Booking requests
-- Review and trust score system
-- Admin moderation tools
+```
+feat: add parking spot listing form
+fix: resolve cloudinary upload key error
+chore: update sprint plan document
+```
 
 ---
 
-# Contributors
+## Team Rules
+
+- Never modify auth files — auth is complete and tested
+- Build backend first, then frontend for each feature
+- Test with all 3 roles (student, homeowner, admin)
+- Never commit `.env` files — use `.env.example` only
+- Use ES modules throughout — no `require()`
+
+---
+
+## Contributors
 
 EkSathe Development Team
-
-University Software Engineering Project
+University Software Engineering Project — Dhaka, Bangladesh
