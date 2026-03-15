@@ -28,7 +28,7 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 | SOS Panic Button (F-11)             | ✅ Complete |
 | Live Trip Sharing (F-12)            | 🔲 Sprint 3 |
 | Route Deviation Alert (F-13)        | 🔲 Sprint 3 |
-| Anonymous Incident Reporting (F-14) | 🔲 Sprint 3 |
+| Anonymous Incident Reporting (F-14) | ✅ Complete |
 | Admin Moderation Dashboard (F-15)   | 🔲 Sprint 3 |
 | Smart Demand Indicator (F-16)       | 🔲 Sprint 4 |
 | Dynamic Pricing Nudge (F-17)        | 🔲 Sprint 4 |
@@ -282,6 +282,29 @@ DELETE /api/sos/contacts/:id
 
 ---
 
+### Anonymous Incident Reporting (F-14)
+
+Students can report safety incidents anonymously with GPS location.
+
+- Categories: Harassment, Unsafe Driving, Theft, Suspicious Activity, Other
+- Description field with minimum 20 character requirement
+- GPS coordinates auto-captured from browser on page load
+- Optional text location field as fallback if GPS unavailable
+- Reports are fully anonymous — reporter identity hidden from admin
+- Admin panel shows all incidents in a table with category, description, location, status and date
+- Admin can update status: Pending → Reviewed → Resolved
+- Status badges color-coded: amber (pending), teal (reviewed), stone (resolved)
+
+**Incident Endpoints:**
+
+```
+POST   /api/incidents              # Submit report (any authenticated user)
+GET    /api/incidents              # View all reports (admin only)
+PATCH  /api/incidents/:id/status   # Update status (admin only)
+```
+
+---
+
 ## Environment Setup
 
 ### Backend
@@ -348,7 +371,7 @@ Frontend runs at `http://localhost:5173`
 | Shahriar | F-01 ✅           | F-08        | F-11 ✅ + F-15 | F-17        |
 | Sushmita | F-02 ✅ + F-05 ✅ | F-06        | F-13           | F-16        |
 | Fauzia   | F-03 ✅           | F-07 + F-10 | F-12           | F-19 + F-20 |
-| Tasnuva  | F-04 ✅           | F-09        | F-14           | F-18        |
+| Tasnuva  | F-04 ✅           | F-09        | F-14 ✅        | F-18        |
 
 ---
 
@@ -378,8 +401,8 @@ git push origin feature/feature-name
 **Commit message format:**
 
 ```
-feat: add booking system and SSLCommerz payment
-fix: resolve merge conflict in routes/index.js
+feat: add anonymous incident reporting (F-14)
+fix: resolve merge conflict in App.jsx
 chore: update readme and sprint status
 ```
 
