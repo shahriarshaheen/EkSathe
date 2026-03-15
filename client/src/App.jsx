@@ -2,13 +2,22 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+
+// Parking
 import CreateListingPage from "./features/parking/pages/CreateListingPage";
 import MyListingsPage from "./features/parking/pages/MyListingsPage";
 import ParkingMapPage from "./features/parking/pages/ParkingMapPage";
 import EarningsDashboard from "./features/parking/pages/EarningsDashboard";
+
+// SOS
 import SOSPage from "./features/sos/pages/SOSPage";
+
+// Profile
 import ProfilePage from "./features/profile/pages/ProfilePage";
+
+// Admin
 import VerificationsPage from "./features/admin/pages/VerificationsPage";
+
 // Auth pages
 import RegisterPage from "./features/auth/pages/RegisterPage";
 import VerifyEmailPage from "./features/auth/pages/VerifyEmailPage";
@@ -25,14 +34,12 @@ import AdminIncidentsPage from "./features/incidents/pages/AdminIncidentsPage";
 
 // Booking
 import MyBookingsPage from "./features/bookings/pages/MyBookingsPage";
+import BookSpotPage from "./features/bookings/pages/BookSpotPage";
 
 // Payment
 import PaymentSuccessPage from "./features/payment/pages/PaymentSuccessPage";
 import PaymentFailPage from "./features/payment/pages/PaymentFailPage";
 import PaymentCancelPage from "./features/payment/pages/PaymentCancelPage";
-
-// for testing
-import BookSpotPage from "./features/bookings/pages/BookSpotPage";
 
 const App = () => {
   return (
@@ -59,7 +66,7 @@ const App = () => {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Protected routes */}
+          {/* Dashboard */}
           <Route
             path="/dashboard"
             element={
@@ -68,6 +75,8 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* Parking */}
           <Route
             path="/dashboard/create-listing"
             element={
@@ -100,6 +109,8 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* SOS */}
           <Route
             path="/dashboard/sos"
             element={
@@ -108,11 +119,9 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* Profile */}
           <Route
-            path="/dashboard/report-incident"
-            element={
-              <ProtectedRoute>
-                <ReportIncidentPage />
             path="/dashboard/profile"
             element={
               <ProtectedRoute>
@@ -120,14 +129,36 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* Admin */}
+          <Route
+            path="/dashboard/verifications"
+            element={
+              <ProtectedRoute>
+                <VerificationsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin/incidents"
             element={
-              <ProtectedRoute allowedRoles={["admin"]}>
+              <ProtectedRoute>
                 <AdminIncidentsPage />
               </ProtectedRoute>
             }
           />
+
+          {/* Incidents */}
+          <Route
+            path="/dashboard/report-incident"
+            element={
+              <ProtectedRoute>
+                <ReportIncidentPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Bookings */}
           <Route
             path="/dashboard/bookings"
             element={
@@ -144,16 +175,11 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* Payment */}
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/fail" element={<PaymentFailPage />} />
           <Route path="/payment/cancel" element={<PaymentCancelPage />} />
-            path="/dashboard/verifications"
-            element={
-              <ProtectedRoute>
-                <VerificationsPage />
-              </ProtectedRoute>
-            }
-          />
 
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
