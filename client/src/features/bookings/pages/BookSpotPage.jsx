@@ -1,24 +1,16 @@
-import { useState } from "react";
-import { initiatePayment } from "../../../services/paymentService";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { CalendarDays, Clock, MapPin, Home, Car, Shield, Bell } from "lucide-react";
 import { bookingSchema } from "../schemas/bookingSchema";
 import { createBooking } from "../../../services/bookingService";
+import { initiatePayment } from "../../../services/paymentService";
+import { parkingService } from "../../../services/parkingService";
 import DashboardLayout from "../../../components/ui/DashboardLayout";
 import FormField from "../../../components/ui/FormField";
 import Button from "../../../components/ui/Button";
-
-// ── Dummy spot — replace with real data after F-01 is merged ──
-const DUMMY_SPOT = {
-  _id: "507f1f77bcf86cd799439011",
-  title: "Covered Parking — NSU Gate 2",
-  address: "Road 103, Gulshan 2, Dhaka",
-  pricePerHour: 50,
-  homeownerId: "507f1f77bcf86cd799439012",
-};
 
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
@@ -30,70 +22,95 @@ const navItems = [
   { path: "/dashboard/notifications", label: "Notifications", icon: Bell, soon: true },
 ];
 
-// Calculate total price from start/end time and price per hour
-const calcPrice = (startTime, endTime, pricePerHour) => {
+const calcPrice = (startTime, endTime, pricePerDay) => {
   if (!startTime || !endTime) return 0;
   const [sh, sm] = startTime.split(":").map(Number);
   const [eh, em] = endTime.split(":").map(Number);
   const hours = (eh * 60 + em - (sh * 60 + sm)) / 60;
   if (hours <= 0) return 0;
-  return Math.round(hours * pricePerHour);
+  // pricePerDay / 24 * hours
+  return Math.round((pricePerDay / 24) * hours);
 };
 
 export default function BookSpotPage() {
   const navigate = useNavigate();
+  const { spotId } = useParams();
   const [loading, setLoading] = useState(false);
+  const [spot, setSpot] = useState(null);
+  const [spotLoading, setSpotLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSpot = async () => {
+      try {
+        const res = await parkingService.getSpotById(spotId);
+        setSpot(res.data.spot);
+      } catch {
+        toast.error("Spot not found");
+        navigate("/dashboard/parking");
+      } finally {
+        setSpotLoading(false);
+      }
+    };
+    if (spotId) fetchSpot();
+  }, [spotId, navigate]);
 
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm({
-    resolver: zodResolver(bookingSchema),
-    defaultValues: {
-      spotId: DUMMY_SPOT._id,
-      homeownerId: DUMMY_SPOT.homeownerId,
-      totalPrice: 0,
-    },
-  });
+  } = useForm({ resolver: zodResolver(bookingSchema) });
 
   const startTime = watch("startTime");
   const endTime = watch("endTime");
-  const totalPrice = calcPrice(startTime, endTime, DUMMY_SPOT.pricePerHour);
+  const totalPrice = spot ? calcPrice(startTime, endTime, spot.pricePerDay) : 0;
 
   const onSubmit = async (data) => {
-  if (totalPrice <= 0) {
-    toast.error("End time must be after start time");
-    return;
-  }
-
-  setLoading(true);
-  try {
-    // Step 1 — create booking
-    const bookingRes = await createBooking({ ...data, totalPrice });
-    const bookingId = bookingRes.data._id;
-
-    // Step 2 — initiate payment
-    const paymentRes = await initiatePayment(bookingId);
-
-    if (paymentRes.url) {
-      // Step 3 — redirect to SSLCommerz
-      window.location.href = paymentRes.url;
+    if (totalPrice <= 0) {
+      toast.error("End time must be after start time");
+      return;
     }
-  } catch (err) {
-    toast.error(err?.response?.data?.message || "Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-};
-  // Today's date in YYYY-MM-DD for min attribute
+
+    setLoading(true);
+    try {
+      // Create booking with real spot data
+      const bookingRes = await createBooking({
+        ...data,
+        spotId: spot._id,
+        homeownerId: spot.owner._id || spot.owner,
+        totalPrice,
+      });
+      const bookingId = bookingRes.data._id;
+
+      // Initiate payment
+      const paymentRes = await initiatePayment(bookingId);
+      if (paymentRes.url) {
+        window.location.href = paymentRes.url;
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const today = new Date().toISOString().split("T")[0];
+
+  if (spotLoading) {
+    return (
+      <DashboardLayout navItems={navItems}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!spot) return null;
 
   return (
     <DashboardLayout navItems={navItems}>
       <div className="p-6 lg:p-8 max-w-2xl mx-auto">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <div className="p-2 bg-teal-50 rounded-lg">
             <CalendarDays className="w-6 h-6 text-teal-600" />
@@ -108,22 +125,16 @@ export default function BookSpotPage() {
         <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 mb-6 flex gap-3">
           <MapPin className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-stone-800">{DUMMY_SPOT.title}</p>
-            <p className="text-xs text-stone-500 mt-0.5">{DUMMY_SPOT.address}</p>
+            <p className="text-sm font-semibold text-stone-800">{spot.title}</p>
+            <p className="text-xs text-stone-500 mt-0.5">{spot.address}</p>
             <p className="text-xs font-medium text-teal-600 mt-1">
-              ৳{DUMMY_SPOT.pricePerHour} / hour
+              ৳{spot.pricePerDay} / day · Available {spot.availableFrom} – {spot.availableTo}
             </p>
           </div>
         </div>
 
-        {/* Booking form */}
         <div className="bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Hidden fields */}
-            <input type="hidden" {...register("spotId")} />
-            <input type="hidden" {...register("homeownerId")} />
-
-            {/* Date */}
             <FormField
               label="Date"
               type="date"
@@ -132,7 +143,6 @@ export default function BookSpotPage() {
               {...register("date")}
             />
 
-            {/* Time row */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 label="Start Time"
@@ -148,7 +158,6 @@ export default function BookSpotPage() {
               />
             </div>
 
-            {/* Price summary */}
             <div className={`rounded-xl px-4 py-3 flex items-center justify-between
               ${totalPrice > 0 ? "bg-teal-50 border border-teal-100" : "bg-stone-50 border border-stone-100"}`}>
               <div className="flex items-center gap-2 text-sm text-stone-600">
@@ -157,8 +166,7 @@ export default function BookSpotPage() {
                   ? `${startTime} — ${endTime}`
                   : "Select start and end time"}
               </div>
-              <p className={`text-sm font-bold
-                ${totalPrice > 0 ? "text-teal-700" : "text-stone-400"}`}>
+              <p className={`text-sm font-bold ${totalPrice > 0 ? "text-teal-700" : "text-stone-400"}`}>
                 {totalPrice > 0 ? `৳${totalPrice}` : "৳0"}
               </p>
             </div>

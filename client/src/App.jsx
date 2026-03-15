@@ -132,7 +132,7 @@ const App = () => {
             }
           />
           <Route
-            path="/dashboard/book-spot"
+            path="/dashboard/book-spot/:spotId"
             element={
               <ProtectedRoute>
                 <BookSpotPage />
