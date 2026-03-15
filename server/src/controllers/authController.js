@@ -8,16 +8,12 @@ import {
 } from "../services/emailService.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const OTP_EXPIRY_MS = 60 * 60 * 1000; // 1 hour in milliseconds
-const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+const OTP_EXPIRY_MS = 60 * 60 * 1000;
+const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000;
 
-// ─── Email Send Helper ────────────────────────────────────────────────────────
-// If EMAIL_USER / EMAIL_PASS are absent (local dev), logs OTP to terminal
-// and skips the send entirely — getTransporter() is never called.
-// If credentials exist but the send fails, throws so the caller can handle it.
+// ─── Email Send Helpers ───────────────────────────────────────────────────────
 const sendOtpOrLog = async (email, otp) => {
   const canSendEmail = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
-
   if (!canSendEmail) {
     console.log("─────────────────────────────────────────");
     console.log("  [DEV MODE] Email credentials not set.");
@@ -25,16 +21,11 @@ const sendOtpOrLog = async (email, otp) => {
     console.log("─────────────────────────────────────────");
     return;
   }
-
   await sendOtpEmail(email, otp);
 };
 
-// ─── Reset Email Send Helper ──────────────────────────────────────────────────
-// Same dev-bypass pattern as sendOtpOrLog but for password reset emails.
-// Logs the full reset URL to terminal when email credentials are absent.
 const sendResetEmailOrLog = async (email, resetUrl) => {
   const canSendEmail = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
-
   if (!canSendEmail) {
     console.log("─────────────────────────────────────────");
     console.log("  [DEV MODE] Email credentials not set.");
@@ -43,14 +34,13 @@ const sendResetEmailOrLog = async (email, resetUrl) => {
     console.log("─────────────────────────────────────────");
     return;
   }
-
   await sendPasswordResetEmail(email, resetUrl);
 };
 
 // ─── Register User ────────────────────────────────────────────────────────────
-// POST /api/auth/register
 export const registerUser = async (req, res) => {
-  const { name, email, phone, password, role, studentId, gender } = req.body;
+  const { name, email, phone, password, role, studentId, gender, university } =
+    req.body;
 
   try {
     const existingUser = await User.findOne({ email }).select("+password");
@@ -73,7 +63,6 @@ export const registerUser = async (req, res) => {
       if (existingUser.status === "pending_verification") {
         const otp = generateOtp();
         const otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
-
         existingUser.emailOtp = otp;
         existingUser.emailOtpExpiresAt = otpExpiresAt;
         await existingUser.save();
@@ -107,6 +96,7 @@ export const registerUser = async (req, res) => {
       password,
       role,
       studentId: role === "student" ? studentId : undefined,
+      university: role === "student" ? university : undefined,
       gender: gender ?? undefined,
       status: "pending_verification",
       isEmailVerified: false,
@@ -142,14 +132,12 @@ export const registerUser = async (req, res) => {
       const messages = Object.values(error.errors).map((e) => e.message);
       return res.status(400).json({ success: false, message: messages[0] });
     }
-
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
         message: "An account with this email already exists.",
       });
     }
-
     console.error("registerUser error:", error.message);
     return res.status(500).json({
       success: false,
@@ -159,7 +147,6 @@ export const registerUser = async (req, res) => {
 };
 
 // ─── Verify Email ─────────────────────────────────────────────────────────────
-// POST /api/auth/verify-email
 export const verifyEmail = async (req, res) => {
   const { email, otp } = req.body;
 
@@ -216,7 +203,6 @@ export const verifyEmail = async (req, res) => {
     user.status = "active";
     user.emailOtp = undefined;
     user.emailOtpExpiresAt = undefined;
-
     await user.save();
 
     return res.status(200).json({
@@ -233,7 +219,6 @@ export const verifyEmail = async (req, res) => {
 };
 
 // ─── Login User ───────────────────────────────────────────────────────────────
-// POST /api/auth/login
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -241,19 +226,16 @@ export const loginUser = async (req, res) => {
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password.",
-      });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid email or password." });
     }
 
     const isPasswordCorrect = await user.comparePassword(password);
-
     if (!isPasswordCorrect) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password.",
-      });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid email or password." });
     }
 
     if (!user.isEmailVerified || user.status === "pending_verification") {
@@ -286,6 +268,8 @@ export const loginUser = async (req, res) => {
       isEmailVerified: user.isEmailVerified,
       trustScore: user.trustScore,
       photoUrl: user.photoUrl ?? null,
+      university: user.university ?? null,
+      studentId: user.studentId ?? null,
     };
 
     return res.status(200).json({
@@ -304,16 +288,14 @@ export const loginUser = async (req, res) => {
 };
 
 // ─── Get Authenticated User ───────────────────────────────────────────────────
-// GET /api/auth/me
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found.",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
     }
 
     return res.status(200).json({
@@ -327,16 +309,17 @@ export const getMe = async (req, res) => {
         trustScore: user.trustScore,
         photoUrl: user.photoUrl ?? null,
         isEmailVerified: user.isEmailVerified,
+        university: user.university ?? null,
+        studentId: user.studentId ?? null,
+        phone: user.phone ?? null,
       },
     });
   } catch (error) {
     if (error.name === "CastError") {
-      return res.status(404).json({
-        success: false,
-        message: "User not found.",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
     }
-
     console.error("getMe error:", error.message);
     return res.status(500).json({
       success: false,
@@ -346,7 +329,6 @@ export const getMe = async (req, res) => {
 };
 
 // ─── Logout User ──────────────────────────────────────────────────────────────
-// POST /api/auth/logout
 export const logoutUser = (req, res) => {
   return res.status(200).json({
     success: true,
@@ -355,16 +337,9 @@ export const logoutUser = (req, res) => {
 };
 
 // ─── Forgot Password ──────────────────────────────────────────────────────────
-// POST /api/auth/forgot-password
-// Always returns 200 regardless of whether the email exists.
-// Prevents email enumeration — caller cannot determine if an account exists.
-// Input is pre-validated by validateForgotPassword middleware.
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
-  // ── Generic response used in all return paths ────────────────────
-  // Defined once here so both the "user not found" and "user found"
-  // paths return byte-for-byte identical responses.
   const genericResponse = {
     success: true,
     message:
@@ -373,13 +348,8 @@ export const forgotPassword = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
+    if (!user) return res.status(200).json(genericResponse);
 
-    // ── User not found — return generic response silently ────────────
-    if (!user) {
-      return res.status(200).json(genericResponse);
-    }
-
-    // ── Generate and store reset token ───────────────────────────────
     const resetToken = generateResetToken();
     const resetExpiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS);
 
@@ -387,18 +357,14 @@ export const forgotPassword = async (req, res) => {
     user.passwordResetExpiresAt = resetExpiresAt;
     await user.save();
 
-    // ── Build reset URL — controller owns this, not the email service ─
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
 
-    // ── Send reset email (or log in dev mode) ────────────────────────
     try {
       await sendResetEmailOrLog(user.email, resetUrl);
     } catch (emailError) {
-      // Roll back token so the user can try again cleanly
       user.passwordResetToken = undefined;
       user.passwordResetExpiresAt = undefined;
       await user.save();
-
       console.error("Password reset email failed:", emailError.message);
       return res.status(500).json({
         success: false,
@@ -417,20 +383,14 @@ export const forgotPassword = async (req, res) => {
 };
 
 // ─── Reset Password ───────────────────────────────────────────────────────────
-// POST /api/auth/reset-password
-// Validates the reset token, sets the new password, and clears the token.
-// Input is pre-validated by validateResetPassword middleware.
 export const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
 
   try {
-    // Must explicitly select internal reset fields — both are select:false
-    const user = await User.findOne({
-      passwordResetToken: token,
-    }).select("+passwordResetToken +passwordResetExpiresAt");
+    const user = await User.findOne({ passwordResetToken: token }).select(
+      "+passwordResetToken +passwordResetExpiresAt",
+    );
 
-    // ── Token not found in DB ────────────────────────────────────────
-    // Covers: token never existed, already used and cleared, or wrong value
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -438,7 +398,6 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    // ── Token expired ────────────────────────────────────────────────
     if (new Date() > user.passwordResetExpiresAt) {
       return res.status(400).json({
         success: false,
@@ -446,13 +405,9 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    // ── Set new password ─────────────────────────────────────────────
-    // Assigning to user.password marks the field as modified.
-    // The pre('save') bcrypt hook rehashes it automatically.
     user.password = newPassword;
-    user.passwordResetToken = undefined; // clears from DB document
-    user.passwordResetExpiresAt = undefined; // clears from DB document
-
+    user.passwordResetToken = undefined;
+    user.passwordResetExpiresAt = undefined;
     await user.save();
 
     return res.status(200).json({

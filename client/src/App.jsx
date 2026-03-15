@@ -7,7 +7,8 @@ import MyListingsPage from "./features/parking/pages/MyListingsPage";
 import ParkingMapPage from "./features/parking/pages/ParkingMapPage";
 import EarningsDashboard from "./features/parking/pages/EarningsDashboard";
 import SOSPage from "./features/sos/pages/SOSPage";
-
+import ProfilePage from "./features/profile/pages/ProfilePage";
+import VerificationsPage from "./features/admin/pages/VerificationsPage";
 // Auth pages
 import RegisterPage from "./features/auth/pages/RegisterPage";
 import VerifyEmailPage from "./features/auth/pages/VerifyEmailPage";
@@ -90,6 +91,22 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <SOSPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/verifications"
+            element={
+              <ProtectedRoute>
+                <VerificationsPage />
               </ProtectedRoute>
             }
           />
