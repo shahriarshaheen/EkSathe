@@ -6,6 +6,7 @@ import CreateListingPage from "./features/parking/pages/CreateListingPage";
 import MyListingsPage from "./features/parking/pages/MyListingsPage";
 import ParkingMapPage from "./features/parking/pages/ParkingMapPage";
 import EarningsDashboard from "./features/parking/pages/EarningsDashboard";
+import SOSPage from "./features/sos/pages/SOSPage";
 
 // Auth pages
 import RegisterPage from "./features/auth/pages/RegisterPage";
@@ -81,6 +82,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <EarningsDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/sos"
+            element={
+              <ProtectedRoute>
+                <SOSPage />
               </ProtectedRoute>
             }
           />
