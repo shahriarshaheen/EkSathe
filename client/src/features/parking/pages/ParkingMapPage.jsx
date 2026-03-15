@@ -357,13 +357,12 @@ const ParkingMapPage = () => {
               )}
 
               {/* Book button */}
-              <button className="w-full bg-stone-900 text-white font-semibold py-3 rounded-xl hover:bg-stone-800 transition-colors mt-auto">
-                Book this spot
-              </button>
-
-              <p className="text-xs text-stone-400 text-center">
-                Booking system coming in Sprint 1
-              </p>
+              <button
+              onClick={() => navigate(`/dashboard/book-spot/${selectedSpot._id}`)}
+              className="w-full bg-stone-900 text-white font-semibold py-3 rounded-xl hover:bg-stone-800 transition-colors mt-auto"
+            >
+              Book this spot
+            </button>
             </div>
           </div>
         )}

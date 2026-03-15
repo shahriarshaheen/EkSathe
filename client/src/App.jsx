@@ -19,11 +19,25 @@ import ResetPasswordPage from "./features/auth/pages/ResetPasswordPage";
 // App pages
 import DashboardPage from "./pages/DashboardPage";
 
+// Incident Pages
+import ReportIncidentPage from "./features/incidents/pages/ReportIncidentPage";
+import AdminIncidentsPage from "./features/incidents/pages/AdminIncidentsPage";
+
+// Booking
+import MyBookingsPage from "./features/bookings/pages/MyBookingsPage";
+
+// Payment
+import PaymentSuccessPage from "./features/payment/pages/PaymentSuccessPage";
+import PaymentFailPage from "./features/payment/pages/PaymentFailPage";
+import PaymentCancelPage from "./features/payment/pages/PaymentCancelPage";
+
+// for testing
+import BookSpotPage from "./features/bookings/pages/BookSpotPage";
+
 const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        {/* Sonner toast container — top-center, clean style */}
         <Toaster
           position="top-center"
           toastOptions={{
@@ -95,6 +109,10 @@ const App = () => {
             }
           />
           <Route
+            path="/dashboard/report-incident"
+            element={
+              <ProtectedRoute>
+                <ReportIncidentPage />
             path="/dashboard/profile"
             element={
               <ProtectedRoute>
@@ -103,6 +121,32 @@ const App = () => {
             }
           />
           <Route
+            path="/admin/incidents"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminIncidentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/bookings"
+            element={
+              <ProtectedRoute>
+                <MyBookingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/book-spot/:spotId"
+            element={
+              <ProtectedRoute>
+                <BookSpotPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/payment/success" element={<PaymentSuccessPage />} />
+          <Route path="/payment/fail" element={<PaymentFailPage />} />
+          <Route path="/payment/cancel" element={<PaymentCancelPage />} />
             path="/dashboard/verifications"
             element={
               <ProtectedRoute>
