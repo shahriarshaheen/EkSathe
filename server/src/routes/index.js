@@ -4,6 +4,7 @@ import parkingRoutes from "./parkingRoutes.js";
 import incidentRoutes from "./incidentRoutes.js";
 import bookingRoutes from "./bookingRoutes.js";
 import paymentRoutes from "./paymentRoutes.js";
+import sosRoutes from "./sosRoutes.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/parking", parkingRoutes);
 router.use("/incidents", incidentRoutes);
 router.use("/bookings", bookingRoutes);
 router.use("/payment", paymentRoutes);
+router.use("/sos", sosRoutes);
 
 export default router;

@@ -6,7 +6,7 @@ import CreateListingPage from "./features/parking/pages/CreateListingPage";
 import MyListingsPage from "./features/parking/pages/MyListingsPage";
 import ParkingMapPage from "./features/parking/pages/ParkingMapPage";
 import EarningsDashboard from "./features/parking/pages/EarningsDashboard";
-
+import SOSPage from "./features/sos/pages/SOSPage";
 
 // Auth pages
 import RegisterPage from "./features/auth/pages/RegisterPage";
@@ -30,14 +30,13 @@ import PaymentSuccessPage from "./features/payment/pages/PaymentSuccessPage";
 import PaymentFailPage from "./features/payment/pages/PaymentFailPage";
 import PaymentCancelPage from "./features/payment/pages/PaymentCancelPage";
 
-// for testing****
+// for testing
 import BookSpotPage from "./features/bookings/pages/BookSpotPage";
 
 const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        {/* Sonner toast container — top-center, clean style */}
         <Toaster
           position="top-center"
           toastOptions={{
@@ -101,6 +100,14 @@ const App = () => {
             }
           />
           <Route
+            path="/dashboard/sos"
+            element={
+              <ProtectedRoute>
+                <SOSPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard/report-incident"
             element={
               <ProtectedRoute>
@@ -124,9 +131,6 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/payment/success" element={<PaymentSuccessPage />} />
-          <Route path="/payment/fail" element={<PaymentFailPage />} />
-          <Route path="/payment/cancel" element={<PaymentCancelPage />} />
           <Route
             path="/dashboard/book-spot"
             element={
@@ -135,6 +139,9 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          <Route path="/payment/success" element={<PaymentSuccessPage />} />
+          <Route path="/payment/fail" element={<PaymentFailPage />} />
+          <Route path="/payment/cancel" element={<PaymentCancelPage />} />
 
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -8,18 +8,30 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 
 ## Project Status
 
-| Module                                 | Status                    |
-| -------------------------------------- | ------------------------- |
-| Authentication System                  | ✅ Complete               |
-| Role-based Dashboards                  | ✅ Complete               |
-| Parking Spot Listing (F-01)            | ✅ Complete               |
-| Interactive Map View (F-02)            | ✅ Complete               |
-| Booking Calendar System (F-03)         | 🔲 Sprint 1 — In Progress |
-| SSLCommerz Payment (F-04)              | 🔲 Sprint 1 — In Progress |
-| Homeowner Earnings Dashboard (F-05)    | ✅ Complete               |
-| Carpooling Network (F-06 to F-10)      | 🔲 Sprint 2               |
-| Safety & Trust (F-11 to F-15)          | 🔲 Sprint 3               |
-| Smart Features & Deploy (F-16 to F-20) | 🔲 Sprint 4               |
+| Module                              | Status                    |
+| ----------------------------------- | ------------------------- |
+| Authentication System               | ✅ Complete               |
+| Role-based Dashboards               | ✅ Complete               |
+| Parking Spot Listing (F-01)         | ✅ Complete               |
+| Interactive Map View (F-02)         | ✅ Complete               |
+| Booking Calendar System (F-03)      | 🔲 Sprint 1 — In Progress |
+| SSLCommerz Payment (F-04)           | 🔲 Sprint 1 — In Progress |
+| Homeowner Earnings Dashboard (F-05) | ✅ Complete               |
+| Post Carpool Route (F-06)           | 🔲 Sprint 2               |
+| Pre-set University Routes (F-07)    | 🔲 Sprint 2               |
+| Gender-Safe Carpool Filter (F-08)   | 🔲 Sprint 2               |
+| Cost Splitting Calculator (F-09)    | 🔲 Sprint 2               |
+| Post-Ride Rating System (F-10)      | 🔲 Sprint 2               |
+| SOS Panic Button (F-11)             | ✅ Complete               |
+| Live Trip Sharing (F-12)            | 🔲 Sprint 3               |
+| Route Deviation Alert (F-13)        | 🔲 Sprint 3               |
+| Anonymous Incident Reporting (F-14) | 🔲 Sprint 3               |
+| Admin Moderation Dashboard (F-15)   | 🔲 Sprint 3               |
+| Smart Demand Indicator (F-16)       | 🔲 Sprint 4               |
+| Dynamic Pricing Nudge (F-17)        | 🔲 Sprint 4               |
+| Firebase Push Notifications (F-18)  | 🔲 Sprint 4               |
+| Advanced Search & Filter (F-19)     | 🔲 Sprint 4               |
+| Trust Score & Badge System (F-20)   | 🔲 Sprint 4               |
 
 ---
 
@@ -57,7 +69,7 @@ EkSathe/
 - MongoDB Atlas + Mongoose
 - JWT Authentication (jsonwebtoken)
 - bcryptjs (password hashing)
-- Nodemailer (email service)
+- Nodemailer (email service + SOS alerts)
 - Multer + Cloudinary (photo uploads)
 - express-validator
 
@@ -130,13 +142,12 @@ DELETE /api/parking/:id          # Delete listing (homeowner)
 
 Students can browse all available parking spots on an interactive map.
 
-- Full screen map powered by Leaflet + OpenStreetMap (no API key needed)
+- Full screen map powered by Leaflet + OpenStreetMap (no API key needed, fully free)
 - Green markers for every active parking spot from the database
 - Click marker → popup with title, price and quick view button
 - Side panel with full spot details — photos, hours, days, owner info
 - Near me button — detects user location and flies map to their area
 - Blue marker shows user's current location
-- No Google Maps API key required — fully free
 
 ---
 
@@ -147,8 +158,29 @@ Homeowners can track their income and listing performance.
 - Stats overview — total earnings, bookings, active listings, avg per booking
 - Monthly earnings bar chart using Recharts (last 6 months)
 - Listing performance table — photo, title, price, booking count, status
-- Live data updates as bookings come in (Sprint 1 booking system)
-- Empty states with call to action for new homeowners
+- Links to create listing and manage listings
+
+---
+
+### SOS Panic Button (F-11)
+
+Students can trigger an emergency alert with one tap.
+
+- Large red SOS button — one tap detects GPS location and sends alert
+- Sends a professional branded email to up to 3 emergency contacts
+- Email includes EkSathe branding, student profile card, static map image, Google Maps link
+- Recommended actions panel (call, go to location, call 999)
+- Manage up to 3 emergency contacts (name, email, relation)
+- Add and delete contacts inline
+
+**SOS Endpoints:**
+
+```
+POST   /api/sos/trigger          # Trigger SOS — sends email to all contacts
+GET    /api/sos/contacts         # Get emergency contacts
+POST   /api/sos/contacts         # Add emergency contact
+DELETE /api/sos/contacts/:id     # Remove emergency contact
+```
 
 ---
 
@@ -163,7 +195,7 @@ PORT=5000
 MONGODB_URI=your_mongodb_atlas_connection_string
 JWT_SECRET=your_jwt_secret
 CLIENT_URL=http://localhost:5173
-EMAIL_USER=your_gmail
+EMAIL_USER=your_gmail@gmail.com
 EMAIL_PASS=your_gmail_app_password
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
@@ -196,7 +228,7 @@ npm run dev
 
 Frontend runs at `http://localhost:5173`
 
-> **Note:** `EMAIL_USER` and `EMAIL_PASS` are optional in development. If omitted, OTPs are logged to the terminal instead of being emailed.
+> **Note:** Gmail requires an App Password — go to myaccount.google.com/apppasswords to generate one.
 
 ---
 
@@ -211,12 +243,12 @@ Frontend runs at `http://localhost:5173`
 
 **Team assignments (5 features each):**
 
-| Teammate | Sprint 1                 | Sprint 2                   | Sprint 3              | Sprint 4                 |
-| -------- | ------------------------ | -------------------------- | --------------------- | ------------------------ |
-| Shahriar | F-01 Parking Listing     | F-08 Gender Filter         | F-11 SOS + F-15 Admin | F-17 Pricing Nudge       |
-| Sushmita | F-02 Map + F-05 Earnings | F-06 Post Carpool          | F-13 Deviation Alert  | F-16 Demand Indicator    |
-| Fauzia   | F-03 Booking Calendar    | F-07 Routes + F-10 Ratings | F-12 Live Sharing     | F-19 Search + F-20 Trust |
-| Tasnuva  | F-04 Payment             | F-09 Cost Splitter         | F-14 Incidents        | F-18 Push Notifications  |
+| Teammate | Sprint 1          | Sprint 2    | Sprint 3       | Sprint 4    |
+| -------- | ----------------- | ----------- | -------------- | ----------- |
+| Shahriar | F-01 ✅           | F-08        | F-11 ✅ + F-15 | F-17        |
+| Sushmita | F-02 ✅ + F-05 ✅ | F-06        | F-13           | F-16        |
+| Fauzia   | F-03              | F-07 + F-10 | F-12           | F-19 + F-20 |
+| Tasnuva  | F-04              | F-09        | F-14           | F-18        |
 
 ---
 
@@ -246,7 +278,7 @@ git push origin feature/feature-name
 **Commit message format:**
 
 ```
-feat: add parking spot listing form
+feat: add SOS panic button with email alerts
 fix: resolve cloudinary upload key error
 chore: update sprint plan document
 ```

@@ -16,7 +16,7 @@ const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
   { path: "/dashboard/parking", label: "Find Parking", icon: MapPin },
   { path: "/dashboard/carpool", label: "Carpooling", icon: Car, soon: true },
-  { path: "/dashboard/sos", label: "SOS & Safety", icon: Shield, soon: true },
+  { path: "/dashboard/sos", label: "SOS & Safety", icon: Shield },
   {
     path: "/dashboard/notifications",
     label: "Notifications",
@@ -140,8 +140,8 @@ const StudentDashboard = () => {
               icon={Shield}
               title="SOS & Safety"
               desc="One tap emergency alert — sends your location to trusted contacts."
-              badge="Coming soon"
               color="bg-red-50 text-red-500"
+              onClick={() => navigate("/dashboard/sos")}
             />
           </div>
         </div>
