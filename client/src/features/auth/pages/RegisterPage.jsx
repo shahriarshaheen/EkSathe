@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ChevronDown, Search } from "lucide-react";
 
 import { registerSchema } from "../schemas/authSchemas";
 import { authService } from "../../../services/authService";
@@ -11,16 +11,23 @@ import AuthLayout from "../../../components/ui/AuthLayout";
 import FormField from "../../../components/ui/FormField";
 import Button from "../../../components/ui/Button";
 import { cn } from "../../../lib/utils";
+import {
+  UNIVERSITIES,
+  getUniversityById,
+} from "../../../constants/universities";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uniSearch, setUniSearch] = useState("");
+  const [uniDropdownOpen, setUniDropdownOpen] = useState(false);
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerSchema),
@@ -28,11 +35,21 @@ const RegisterPage = () => {
   });
 
   const role = watch("role");
+  const selectedUniversity = watch("university");
+
+  const selectedUni = selectedUniversity
+    ? getUniversityById(selectedUniversity)
+    : null;
+
+  const filteredUniversities = UNIVERSITIES.filter(
+    (u) =>
+      u.name.toLowerCase().includes(uniSearch.toLowerCase()) ||
+      u.city.toLowerCase().includes(uniSearch.toLowerCase()),
+  );
 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      // Strip confirmPassword — backend does not expect it
       const { confirmPassword, ...payload } = data;
       await authService.register(payload);
       toast.success(
@@ -55,7 +72,7 @@ const RegisterPage = () => {
         {/* Role selector */}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-stone-700">I am a</label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {["student", "homeowner", "admin"].map((r) => (
               <label
                 key={r}
@@ -85,6 +102,120 @@ const RegisterPage = () => {
           )}
         </div>
 
+        {/* University selector — students only */}
+        {role === "student" && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-stone-700">
+              University
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setUniDropdownOpen((v) => !v)}
+                className={cn(
+                  "w-full flex items-center justify-between px-3.5 py-2.5 text-sm rounded-lg border bg-white transition-colors",
+                  errors.university
+                    ? "border-red-400"
+                    : "border-stone-200 hover:border-stone-300",
+                  uniDropdownOpen && "border-teal-600 ring-2 ring-teal-600/20",
+                )}
+              >
+                <span
+                  className={selectedUni ? "text-stone-900" : "text-stone-400"}
+                >
+                  {selectedUni ? selectedUni.name : "Select your university"}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 text-stone-400 transition-transform",
+                    uniDropdownOpen && "rotate-180",
+                  )}
+                />
+              </button>
+
+              {uniDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                  {/* Search */}
+                  <div className="p-2 border-b border-stone-100">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+                      <input
+                        type="text"
+                        placeholder="Search university..."
+                        value={uniSearch}
+                        onChange={(e) => setUniSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 text-sm border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+
+                  {/* List */}
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredUniversities.length === 0 ? (
+                      <p className="text-xs text-stone-400 text-center py-4">
+                        No university found
+                      </p>
+                    ) : (
+                      filteredUniversities.map((uni) => (
+                        <button
+                          key={uni.id}
+                          type="button"
+                          onClick={() => {
+                            setValue("university", uni.id);
+                            setUniDropdownOpen(false);
+                            setUniSearch("");
+                          }}
+                          className={cn(
+                            "w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-stone-50 transition-colors",
+                            selectedUniversity === uni.id && "bg-teal-50",
+                          )}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={cn(
+                                "text-sm font-medium truncate",
+                                selectedUniversity === uni.id
+                                  ? "text-teal-700"
+                                  : "text-stone-800",
+                              )}
+                            >
+                              {uni.name}
+                            </p>
+                            <p className="text-xs text-stone-400">
+                              {uni.city} · @{uni.domain}
+                            </p>
+                          </div>
+                          {selectedUniversity === uni.id && (
+                            <span className="text-teal-600 text-xs font-bold mt-0.5">
+                              ✓
+                            </span>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Email hint */}
+            {selectedUni && (
+              <p className="text-xs text-teal-600 flex items-center gap-1">
+                <span>📧</span>
+                Use your university email ending in{" "}
+                <strong>@{selectedUni.domain}</strong>
+              </p>
+            )}
+
+            {errors.university && (
+              <p className="text-xs text-red-500">
+                {errors.university.message}
+              </p>
+            )}
+          </div>
+        )}
+
         <FormField
           id="name"
           label="Full name"
@@ -97,7 +228,11 @@ const RegisterPage = () => {
           id="email"
           label="Email address"
           type="email"
-          placeholder="you@example.com"
+          placeholder={
+            role === "student" && selectedUni
+              ? `yourname@${selectedUni.domain}`
+              : "you@example.com"
+          }
           error={errors.email?.message}
           {...register("email")}
         />
@@ -112,18 +247,19 @@ const RegisterPage = () => {
           {...register("phone")}
         />
 
-        {/* Conditional student ID */}
+        {/* Student ID */}
         {role === "student" && (
           <FormField
             id="studentId"
             label="Student ID"
             placeholder="e.g. 2021BCS045"
             error={errors.studentId?.message}
+            hint="Your official university student ID for verification"
             {...register("studentId")}
           />
         )}
 
-        {/* Password with show/hide toggle */}
+        {/* Password */}
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="password"
@@ -151,7 +287,6 @@ const RegisterPage = () => {
               onClick={() => setShowPassword((v) => !v)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
               tabIndex={-1}
-              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
                 <EyeOff className="w-4 h-4" />

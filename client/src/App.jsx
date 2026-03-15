@@ -7,7 +7,8 @@ import MyListingsPage from "./features/parking/pages/MyListingsPage";
 import ParkingMapPage from "./features/parking/pages/ParkingMapPage";
 import EarningsDashboard from "./features/parking/pages/EarningsDashboard";
 import SOSPage from "./features/sos/pages/SOSPage";
-
+import ProfilePage from "./features/profile/pages/ProfilePage";
+import VerificationsPage from "./features/admin/pages/VerificationsPage";
 // Auth pages
 import RegisterPage from "./features/auth/pages/RegisterPage";
 import VerifyEmailPage from "./features/auth/pages/VerifyEmailPage";
@@ -112,6 +113,10 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <ReportIncidentPage />
+            path="/dashboard/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             }
           />
@@ -142,6 +147,13 @@ const App = () => {
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/fail" element={<PaymentFailPage />} />
           <Route path="/payment/cancel" element={<PaymentCancelPage />} />
+            path="/dashboard/verifications"
+            element={
+              <ProtectedRoute>
+                <VerificationsPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

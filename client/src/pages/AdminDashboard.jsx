@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -14,9 +16,11 @@ import {
 } from "lucide-react";
 import DashboardLayout from "../components/ui/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
+import api from "../lib/api";
 
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { path: "/dashboard/verifications", label: "Verifications", icon: UserCheck },
   { path: "/dashboard/users", label: "Users", icon: Users, soon: true },
   {
     path: "/dashboard/listings",
@@ -50,7 +54,7 @@ const StatCard = ({ label, value, sub, icon: Icon, accent, bg, trend }) => (
         <Icon className={`w-4 h-4 ${accent}`} />
       </div>
     </div>
-    <p className={`text-2xl font-bold text-stone-900`}>{value}</p>
+    <p className="text-2xl font-bold text-stone-900">{value}</p>
     <div className="flex items-center gap-1 mt-1">
       {trend && <TrendingUp className="w-3 h-3 text-green-500" />}
       {sub && <p className="text-xs text-stone-400">{sub}</p>}
@@ -84,6 +88,26 @@ const SystemRow = ({ icon: Icon, label, status, color, bg }) => (
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalStudents: 0,
+    pendingVerifications: 0,
+    totalHomeowners: 0,
+  });
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const res = await api.get("/admin/stats");
+      setStats(res.data.stats);
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
+    }
+  };
 
   return (
     <DashboardLayout navItems={navItems}>
@@ -108,24 +132,24 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
             label="Total Users"
-            value="1"
-            sub="You just registered"
+            value={stats.totalUsers}
+            sub="All roles"
             icon={Users}
             accent="text-purple-600"
             bg="bg-purple-50"
           />
           <StatCard
-            label="Active Listings"
-            value="0"
-            sub="No listings yet"
-            icon={ParkingSquare}
+            label="Students"
+            value={stats.totalStudents}
+            sub={`${stats.totalHomeowners} homeowners`}
+            icon={UserCheck}
             accent="text-blue-600"
             bg="bg-blue-50"
           />
           <StatCard
-            label="Open Reports"
-            value="0"
-            sub="All clear"
+            label="Pending Verifications"
+            value={stats.pendingVerifications}
+            sub="Student IDs to review"
             icon={AlertTriangle}
             accent="text-amber-600"
             bg="bg-amber-50"
@@ -140,6 +164,31 @@ const AdminDashboard = () => {
             trend
           />
         </div>
+
+        {/* Pending verifications banner */}
+        {stats.pendingVerifications > 0 && (
+          <div
+            onClick={() => navigate("/dashboard/verifications")}
+            className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center justify-between cursor-pointer hover:bg-amber-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <UserCheck className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-900">
+                  {stats.pendingVerifications} student
+                  {stats.pendingVerifications !== 1 ? "s" : ""} waiting for ID
+                  verification
+                </p>
+                <p className="text-xs text-amber-600">
+                  Click to review and approve
+                </p>
+              </div>
+            </div>
+            <span className="text-amber-600 font-bold text-lg">→</span>
+          </div>
+        )}
 
         {/* Content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -158,6 +207,13 @@ const AdminDashboard = () => {
             <SystemRow
               icon={Users}
               label="User Management"
+              status="Operational"
+              color="text-green-600"
+              bg="bg-green-50"
+            />
+            <SystemRow
+              icon={UserCheck}
+              label="Student Verification"
               status="Operational"
               color="text-green-600"
               bg="bg-green-50"
@@ -191,10 +247,18 @@ const AdminDashboard = () => {
               Admin Profile
             </h3>
             <div className="flex flex-col items-center text-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-purple-50 border-2 border-purple-100 flex items-center justify-center">
-                <span className="text-xl font-bold text-purple-600">
-                  {user?.name?.[0]?.toUpperCase()}
-                </span>
+              <div className="w-14 h-14 rounded-full overflow-hidden bg-purple-50 border-2 border-purple-100 flex items-center justify-center">
+                {user?.photoUrl ? (
+                  <img
+                    src={user.photoUrl}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xl font-bold text-purple-600">
+                    {user?.name?.[0]?.toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <p className="font-semibold text-stone-800 text-sm">
@@ -231,7 +295,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Quick moderation panel */}
+        {/* Moderation queue */}
         <div className="bg-white rounded-xl border border-stone-200 p-6">
           <h3 className="text-sm font-semibold text-stone-700 mb-4">
             Moderation Queue
@@ -241,9 +305,10 @@ const AdminDashboard = () => {
               {
                 icon: UserCheck,
                 label: "Pending Verifications",
-                count: 0,
+                count: stats.pendingVerifications,
                 color: "text-blue-600",
                 bg: "bg-blue-50",
+                path: "/dashboard/verifications",
               },
               {
                 icon: UserX,
@@ -251,6 +316,7 @@ const AdminDashboard = () => {
                 count: 0,
                 color: "text-red-500",
                 bg: "bg-red-50",
+                path: null,
               },
               {
                 icon: AlertTriangle,
@@ -258,11 +324,13 @@ const AdminDashboard = () => {
                 count: 0,
                 color: "text-amber-600",
                 bg: "bg-amber-50",
+                path: null,
               },
             ].map((item) => (
               <div
                 key={item.label}
-                className="flex items-center gap-3 bg-stone-50 rounded-xl p-4"
+                onClick={() => item.path && navigate(item.path)}
+                className={`flex items-center gap-3 bg-stone-50 rounded-xl p-4 ${item.path ? "cursor-pointer hover:bg-stone-100 transition-colors" : ""}`}
               >
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}
@@ -278,9 +346,6 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
-          <p className="text-xs text-stone-400 text-center mt-4">
-            Moderation tools will be available when user activity begins.
-          </p>
         </div>
       </div>
     </DashboardLayout>

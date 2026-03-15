@@ -6,6 +6,8 @@ import bookingRoutes from "./bookingRoutes.js";
 import paymentRoutes from "./paymentRoutes.js";
 import sosRoutes from "./sosRoutes.js";
 
+import userRoutes from "./userRoutes.js";
+import adminRoutes from "./adminRoutes.js";
 const router = Router();
 
 router.get("/", (req, res) => {
@@ -21,4 +23,7 @@ router.use("/bookings", bookingRoutes);
 router.use("/payment", paymentRoutes);
 router.use("/sos", sosRoutes);
 
+export default router;
+router.use("/user", userRoutes);
+router.use("/admin", adminRoutes);
 export default router;

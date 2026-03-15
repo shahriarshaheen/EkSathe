@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import { UNIVERSITIES } from "../constants/universities.js";
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -63,7 +64,14 @@ const userSchema = new mongoose.Schema(
         "Student ID is required for student accounts",
       ],
     },
-
+    university: {
+      type: String,
+      enum: {
+        values: [...UNIVERSITIES.map((u) => u.id), null, undefined],
+        message: "Invalid university selection",
+      },
+      default: null,
+    },
     // ─── Optional Profile Fields ─────────────────────────────────────
     gender: {
       type: String,
@@ -78,11 +86,23 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    photoPublicId: {
+      type: String,
+      select: false,
+    },
 
     // ─── Trust & Verification ────────────────────────────────────────
     trustScore: {
       type: Number,
       default: 0,
+    },
+    studentVerified: {
+      type: Boolean,
+      default: false,
+    },
+    studentRejected: {
+      type: Boolean,
+      default: false,
     },
 
     isEmailVerified: {

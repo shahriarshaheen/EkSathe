@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  UNIVERSITIES,
+  getUniversityById,
+} from "../../../constants/universities";
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 export const registerSchema = z
@@ -29,11 +33,14 @@ export const registerSchema = z
       errorMap: () => ({ message: "Please select a role" }),
     }),
     studentId: z.string().trim().optional(),
+    university: z.string().optional(),
   })
+  // Passwords must match
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
   })
+  // Student ID required for students
   .refine(
     (data) => {
       if (data.role === "student") {
@@ -44,6 +51,36 @@ export const registerSchema = z
     {
       message: "Student ID is required for student accounts",
       path: ["studentId"],
+    },
+  )
+  // University required for students
+  .refine(
+    (data) => {
+      if (data.role === "student") {
+        return !!data.university && data.university.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Please select your university",
+      path: ["university"],
+    },
+  )
+  // Email domain must match selected university
+  .refine(
+    (data) => {
+      if (data.role === "student" && data.university && data.email) {
+        const uni = getUniversityById(data.university);
+        if (uni) {
+          const emailDomain = data.email.split("@")[1];
+          return emailDomain === uni.domain;
+        }
+      }
+      return true;
+    },
+    {
+      message: "Your email must match your selected university's domain",
+      path: ["email"],
     },
   );
 

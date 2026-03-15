@@ -1,5 +1,8 @@
 import { body, validationResult } from "express-validator";
-
+import {
+  STUDENT_EMAIL_DOMAINS,
+  getUniversityById,
+} from "../constants/universities.js";
 // ─── Validation Result Handler ────────────────────────────────────────────────
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -74,7 +77,31 @@ export const validateRegister = [
       }
       return true;
     }),
+  // University required for students
+  body("university").custom((value, { req }) => {
+    if (req.body.role === "student") {
+      if (!value) throw new Error("Please select your university");
+      const uni = getUniversityById(value);
+      if (!uni) throw new Error("Invalid university selected");
+    }
+    return true;
+  }),
 
+  // Email domain must match selected university for students
+  body("email").custom((value, { req }) => {
+    if (req.body.role === "student") {
+      const uni = getUniversityById(req.body.university);
+      if (uni) {
+        const emailDomain = value.split("@")[1];
+        if (emailDomain !== uni.domain) {
+          throw new Error(
+            `Students from ${uni.name} must use a @${uni.domain} email address`,
+          );
+        }
+      }
+    }
+    return true;
+  }),
   handleValidationErrors,
 ];
 

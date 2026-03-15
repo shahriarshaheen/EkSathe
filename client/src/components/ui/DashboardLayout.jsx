@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import { toast } from "sonner";
-import { MapPin, LogOut, Menu, X } from "lucide-react";
+import { MapPin, LogOut, Menu, X, UserCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../lib/utils";
 
@@ -9,6 +9,27 @@ const roleBadgeStyle = {
   student: "bg-teal-100 text-teal-700",
   homeowner: "bg-amber-100 text-amber-700",
   admin: "bg-purple-100 text-purple-700",
+};
+
+const UserAvatar = ({ user, size = "sm" }) => {
+  const sizeClass = size === "sm" ? "w-9 h-9 text-sm" : "w-8 h-8 text-xs";
+  return (
+    <div
+      className={`${sizeClass} rounded-full overflow-hidden bg-stone-100 flex items-center justify-center flex-shrink-0`}
+    >
+      {user?.photoUrl ? (
+        <img
+          src={user.photoUrl}
+          alt={user.name}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <span className="font-semibold text-stone-600">
+          {user?.name?.[0]?.toUpperCase()}
+        </span>
+      )}
+    </div>
+  );
 };
 
 const DashboardLayout = ({ children, navItems }) => {
@@ -38,15 +59,14 @@ const DashboardLayout = ({ children, navItems }) => {
           </div>
         </div>
 
-        {/* User info */}
-        <div className="px-4 py-4 border-b border-stone-100">
+        {/* User info — clickable, goes to profile */}
+        <button
+          onClick={() => navigate("/dashboard/profile")}
+          className="px-4 py-4 border-b border-stone-100 hover:bg-stone-50 transition-colors text-left w-full"
+        >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-semibold text-stone-600">
-                {user?.name?.[0]?.toUpperCase()}
-              </span>
-            </div>
-            <div className="min-w-0">
+            <UserAvatar user={user} size="sm" />
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-stone-800 truncate">
                 {user?.name}
               </p>
@@ -60,7 +80,11 @@ const DashboardLayout = ({ children, navItems }) => {
               </span>
             </div>
           </div>
-        </div>
+          <p className="text-xs text-stone-400 mt-2 flex items-center gap-1">
+            <UserCircle className="w-3 h-3" />
+            Edit profile
+          </p>
+        </button>
 
         {/* Nav items */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -68,6 +92,7 @@ const DashboardLayout = ({ children, navItems }) => {
             <NavLink
               key={item.path}
               to={item.path}
+              end={item.path === "/dashboard"}
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -110,12 +135,20 @@ const DashboardLayout = ({ children, navItems }) => {
             EkSathe
           </span>
         </div>
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="p-2 text-stone-500"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("/dashboard/profile")}
+            className="p-1"
+          >
+            <UserAvatar user={user} size="xs" />
+          </button>
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="p-2 text-stone-500"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* ── Mobile drawer ── */}
@@ -132,11 +165,30 @@ const DashboardLayout = ({ children, navItems }) => {
                 <X className="w-5 h-5 text-stone-500" />
               </button>
             </div>
+
+            {/* Mobile user info */}
+            <button
+              onClick={() => {
+                navigate("/dashboard/profile");
+                setMobileOpen(false);
+              }}
+              className="flex items-center gap-3 px-4 py-3 border-b border-stone-100 hover:bg-stone-50 transition-colors"
+            >
+              <UserAvatar user={user} size="sm" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-stone-800 truncate">
+                  {user?.name}
+                </p>
+                <p className="text-xs text-stone-400">Edit profile</p>
+              </div>
+            </button>
+
             <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
               {navItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  end={item.path === "/dashboard"}
                   onClick={() => setMobileOpen(false)}
                   className={({ isActive }) =>
                     cn(
@@ -152,6 +204,7 @@ const DashboardLayout = ({ children, navItems }) => {
                 </NavLink>
               ))}
             </nav>
+
             <div className="p-3 border-t border-stone-100">
               <button
                 onClick={handleLogout}

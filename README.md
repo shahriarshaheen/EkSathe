@@ -12,6 +12,9 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 | ----------------------------------- | ------------------------- |
 | Authentication System               | ✅ Complete               |
 | Role-based Dashboards               | ✅ Complete               |
+| University Email Restriction        | ✅ Complete               |
+| Student ID Verification (Admin)     | ✅ Complete               |
+| Profile Photo & Edit Page           | ✅ Complete               |
 | Parking Spot Listing (F-01)         | ✅ Complete               |
 | Interactive Map View (F-02)         | ✅ Complete               |
 | Booking Calendar System (F-03)      | 🔲 Sprint 1 — In Progress |
@@ -102,13 +105,71 @@ POST   /api/auth/reset-password
 
 ---
 
+### University Email Restriction
+
+Students must register with a verified Bangladeshi university email.
+
+- 27 universities supported — 12 private + 15 public
+- Searchable university dropdown on registration
+- Email domain validated against selected university at both frontend and backend
+- Email hint shown dynamically: "Use your @northsouth.edu email"
+
+**Supported universities include:** NSU, BRAC, AIUB, IUB, UIU, EWU, AUST, DIU, DU, BUET, JU, SUST, RU, CU, KU, RUET, CUET, KUET and more.
+
+---
+
+### Student ID Verification (Admin)
+
+Admins can manually verify student ID submissions.
+
+- Students submit their university ID on registration
+- Admin dashboard shows live pending verification count
+- Admin can approve or reject with optional reason
+- Approval sends branded email + adds 10 trust score points
+- Rejection sends email with reason
+- Three tabs: Pending / Approved / Rejected with counts
+- Search by name, email, or student ID
+
+**Admin Endpoints:**
+
+```
+GET    /api/admin/stats
+GET    /api/admin/students
+GET    /api/admin/students/pending
+PUT    /api/admin/students/:id/approve
+PUT    /api/admin/students/:id/reject
+```
+
+---
+
+### Profile Photo & Edit Page
+
+All users can upload a profile photo and edit their details.
+
+- Upload profile photo stored on Cloudinary
+- Edit name, phone number, gender
+- Remove profile photo
+- Read-only: email, student ID, university — cannot be changed after registration
+- Profile photo shown in sidebar and all dashboard cards
+- Sidebar user card is clickable — navigates to profile page
+
+**User Endpoints:**
+
+```
+GET    /api/user/profile
+PUT    /api/user/profile
+DELETE /api/user/profile/photo
+```
+
+---
+
 ### Role-based Dashboards
 
 Each role gets a dedicated dashboard UI after login.
 
 - **Student Dashboard** — teal theme, campus-focused, parking/carpool/SOS cards
 - **Homeowner Dashboard** — amber theme, listings/bookings/earnings management
-- **Admin Dashboard** — purple theme, system status, moderation queue
+- **Admin Dashboard** — purple theme, real stats, pending verification alerts, system status
 
 ---
 
@@ -142,11 +203,11 @@ DELETE /api/parking/:id          # Delete listing (homeowner)
 
 Students can browse all available parking spots on an interactive map.
 
-- Full screen map powered by Leaflet + OpenStreetMap (no API key needed, fully free)
+- Full screen map powered by Leaflet + OpenStreetMap (no API key, fully free)
 - Green markers for every active parking spot from the database
-- Click marker → popup with title, price and quick view button
+- Click marker → popup with title, price, quick view button
 - Side panel with full spot details — photos, hours, days, owner info
-- Near me button — detects user location and flies map to their area
+- Near me button — detects user location and flies map to area
 - Blue marker shows user's current location
 
 ---
@@ -155,10 +216,9 @@ Students can browse all available parking spots on an interactive map.
 
 Homeowners can track their income and listing performance.
 
-- Stats overview — total earnings, bookings, active listings, avg per booking
-- Monthly earnings bar chart using Recharts (last 6 months)
-- Listing performance table — photo, title, price, booking count, status
-- Links to create listing and manage listings
+- Stats: total earnings, bookings, active listings, avg per booking
+- Monthly earnings bar chart — last 6 months (Recharts)
+- Listing performance table with photo, price, booking count, status
 
 ---
 
@@ -166,20 +226,19 @@ Homeowners can track their income and listing performance.
 
 Students can trigger an emergency alert with one tap.
 
-- Large red SOS button — one tap detects GPS location and sends alert
-- Sends a professional branded email to up to 3 emergency contacts
+- Large red SOS button — detects GPS and sends alert instantly
+- Professional branded email to up to 3 emergency contacts
 - Email includes EkSathe branding, student profile card, static map image, Google Maps link
 - Recommended actions panel (call, go to location, call 999)
 - Manage up to 3 emergency contacts (name, email, relation)
-- Add and delete contacts inline
 
 **SOS Endpoints:**
 
 ```
-POST   /api/sos/trigger          # Trigger SOS — sends email to all contacts
-GET    /api/sos/contacts         # Get emergency contacts
-POST   /api/sos/contacts         # Add emergency contact
-DELETE /api/sos/contacts/:id     # Remove emergency contact
+POST   /api/sos/trigger
+GET    /api/sos/contacts
+POST   /api/sos/contacts
+DELETE /api/sos/contacts/:id
 ```
 
 ---
@@ -278,9 +337,9 @@ git push origin feature/feature-name
 **Commit message format:**
 
 ```
-feat: add SOS panic button with email alerts
+feat: add university email restriction + student ID verification
 fix: resolve cloudinary upload key error
-chore: update sprint plan document
+chore: update readme and sprint status
 ```
 
 ---
