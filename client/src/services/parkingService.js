@@ -1,4 +1,4 @@
-import api from "../lib/api";
+import api from "../lib/api.js";
 
 export const parkingService = {
   // Create a new parking spot (multipart/form-data for photos)
