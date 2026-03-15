@@ -8,33 +8,33 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 
 ## Project Status
 
-| Module                              | Status                    |
-| ----------------------------------- | ------------------------- |
-| Authentication System               | ✅ Complete               |
-| Role-based Dashboards               | ✅ Complete               |
-| University Email Restriction        | ✅ Complete               |
-| Student ID Verification (Admin)     | ✅ Complete               |
-| Profile Photo & Edit Page           | ✅ Complete               |
-| Parking Spot Listing (F-01)         | ✅ Complete               |
-| Interactive Map View (F-02)         | ✅ Complete               |
-| Booking Calendar System (F-03)      | 🔲 Sprint 1 — In Progress |
-| SSLCommerz Payment (F-04)           | 🔲 Sprint 1 — In Progress |
-| Homeowner Earnings Dashboard (F-05) | ✅ Complete               |
-| Post Carpool Route (F-06)           | 🔲 Sprint 2               |
-| Pre-set University Routes (F-07)    | 🔲 Sprint 2               |
-| Gender-Safe Carpool Filter (F-08)   | 🔲 Sprint 2               |
-| Cost Splitting Calculator (F-09)    | 🔲 Sprint 2               |
-| Post-Ride Rating System (F-10)      | 🔲 Sprint 2               |
-| SOS Panic Button (F-11)             | ✅ Complete               |
-| Live Trip Sharing (F-12)            | 🔲 Sprint 3               |
-| Route Deviation Alert (F-13)        | 🔲 Sprint 3               |
-| Anonymous Incident Reporting (F-14) | 🔲 Sprint 3               |
-| Admin Moderation Dashboard (F-15)   | 🔲 Sprint 3               |
-| Smart Demand Indicator (F-16)       | 🔲 Sprint 4               |
-| Dynamic Pricing Nudge (F-17)        | 🔲 Sprint 4               |
-| Firebase Push Notifications (F-18)  | 🔲 Sprint 4               |
-| Advanced Search & Filter (F-19)     | 🔲 Sprint 4               |
-| Trust Score & Badge System (F-20)   | 🔲 Sprint 4               |
+| Module                              | Status      |
+| ----------------------------------- | ----------- |
+| Authentication System               | ✅ Complete |
+| Role-based Dashboards               | ✅ Complete |
+| University Email Restriction        | ✅ Complete |
+| Student ID Verification (Admin)     | ✅ Complete |
+| Profile Photo & Edit Page           | ✅ Complete |
+| Parking Spot Listing (F-01)         | ✅ Complete |
+| Interactive Map View (F-02)         | ✅ Complete |
+| Booking Calendar System (F-03)      | ✅ Complete |
+| SSLCommerz Payment (F-04)           | ✅ Complete |
+| Homeowner Earnings Dashboard (F-05) | ✅ Complete |
+| Post Carpool Route (F-06)           | 🔲 Sprint 2 |
+| Pre-set University Routes (F-07)    | 🔲 Sprint 2 |
+| Gender-Safe Carpool Filter (F-08)   | 🔲 Sprint 2 |
+| Cost Splitting Calculator (F-09)    | 🔲 Sprint 2 |
+| Post-Ride Rating System (F-10)      | 🔲 Sprint 2 |
+| SOS Panic Button (F-11)             | ✅ Complete |
+| Live Trip Sharing (F-12)            | 🔲 Sprint 3 |
+| Route Deviation Alert (F-13)        | 🔲 Sprint 3 |
+| Anonymous Incident Reporting (F-14) | 🔲 Sprint 3 |
+| Admin Moderation Dashboard (F-15)   | 🔲 Sprint 3 |
+| Smart Demand Indicator (F-16)       | 🔲 Sprint 4 |
+| Dynamic Pricing Nudge (F-17)        | 🔲 Sprint 4 |
+| Firebase Push Notifications (F-18)  | 🔲 Sprint 4 |
+| Advanced Search & Filter (F-19)     | 🔲 Sprint 4 |
+| Trust Score & Badge System (F-20)   | 🔲 Sprint 4 |
 
 ---
 
@@ -75,6 +75,7 @@ EkSathe/
 - Nodemailer (email service + SOS alerts)
 - Multer + Cloudinary (photo uploads)
 - express-validator
+- SSLCommerz (payment gateway)
 
 ---
 
@@ -212,6 +213,44 @@ Students can browse all available parking spots on an interactive map.
 
 ---
 
+### Booking Calendar System (F-03)
+
+Students can book parking spots with date and time selection.
+
+- Calendar UI for selecting booking date and time slot
+- Backend conflict checking — no double bookings
+- Booking confirmation sent via email
+- My Bookings page to view booking history and status
+
+**Booking Endpoints:**
+
+```
+POST   /api/bookings
+GET    /api/bookings/my
+```
+
+---
+
+### SSLCommerz Payment (F-04)
+
+Students can pay for bookings online via SSLCommerz.
+
+- Supports bKash, Nagad, cards and other local payment methods
+- Payment sandbox integration
+- On success: booking status updates to confirmed, homeowner notified
+- Success, fail, and cancel redirect pages
+
+**Payment Endpoints:**
+
+```
+POST   /api/payment/init
+POST   /api/payment/success
+POST   /api/payment/fail
+POST   /api/payment/cancel
+```
+
+---
+
 ### Homeowner Earnings Dashboard (F-05)
 
 Homeowners can track their income and listing performance.
@@ -259,6 +298,8 @@ EMAIL_PASS=your_gmail_app_password
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
+SSLCOMMERZ_STORE_ID=your_store_id
+SSLCOMMERZ_STORE_PASSWORD=your_store_password
 ```
 
 Run backend:
@@ -306,8 +347,8 @@ Frontend runs at `http://localhost:5173`
 | -------- | ----------------- | ----------- | -------------- | ----------- |
 | Shahriar | F-01 ✅           | F-08        | F-11 ✅ + F-15 | F-17        |
 | Sushmita | F-02 ✅ + F-05 ✅ | F-06        | F-13           | F-16        |
-| Fauzia   | F-03              | F-07 + F-10 | F-12           | F-19 + F-20 |
-| Tasnuva  | F-04              | F-09        | F-14           | F-18        |
+| Fauzia   | F-03 ✅           | F-07 + F-10 | F-12           | F-19 + F-20 |
+| Tasnuva  | F-04 ✅           | F-09        | F-14           | F-18        |
 
 ---
 
@@ -337,8 +378,8 @@ git push origin feature/feature-name
 **Commit message format:**
 
 ```
-feat: add university email restriction + student ID verification
-fix: resolve cloudinary upload key error
+feat: add booking system and SSLCommerz payment
+fix: resolve merge conflict in routes/index.js
 chore: update readme and sprint status
 ```
 
