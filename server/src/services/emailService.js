@@ -143,3 +143,115 @@ export const sendPasswordResetEmail = async (toEmail, resetUrl) => {
     html,
   });
 };
+
+// ─── Send Carpool Join Notification ──────────────────────────────────────────
+// @param {string} toEmail      - Driver's email address
+// @param {string} driverName   - Driver's name
+// @param {string} passengerName - Passenger who joined
+// @param {object} route        - CarpoolRoute object
+//
+// Throws on SMTP failure — caller (controller) is responsible for catching.
+export const sendCarpoolJoinEmail = async (toEmail, driverName, passengerName, route) => {
+  const transporter = getTransporter();
+
+  const departure = new Date(route.departureTime).toLocaleString("en-BD", {
+    weekday: "long",
+    month:   "long",
+    day:     "numeric",
+    hour:    "2-digit",
+    minute:  "2-digit",
+  });
+
+  const seatsLeft = route.availableSeats;
+
+  const html = emailWrapper(`
+    <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 8px;">
+      Someone joined your ride!
+    </h1>
+
+    <p style="font-size: 15px; color: #444444; margin: 0 0 24px; line-height: 1.6;">
+      Hi ${driverName}, <strong>${passengerName}</strong> has joined your carpool ride.
+    </p>
+
+    <div style="
+      background-color: #f0fdfa;
+      border: 1px solid #99f6e4;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    ">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #888888; width: 120px;">Route</td>
+          <td style="padding: 6px 0; font-size: 14px; font-weight: 600; color: #1a1a1a;">
+            ${route.origin.area} &rarr; ${route.destination.area}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #888888;">From</td>
+          <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a;">${route.origin.name}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #888888;">To</td>
+          <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a;">${route.destination.name}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #888888;">Departure</td>
+          <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a;">${departure}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #888888;">Passenger</td>
+          <td style="padding: 6px 0; font-size: 14px; font-weight: 600; color: #0d9488;">${passengerName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; font-size: 13px; color: #888888;">Seats left</td>
+          <td style="padding: 6px 0; font-size: 14px; color: #1a1a1a;">${seatsLeft} of ${route.totalSeats}</td>
+        </tr>
+      </table>
+    </div>
+
+    ${seatsLeft === 0 ? `
+    <div style="
+      background-color: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+    ">
+      <p style="font-size: 13px; color: #dc2626; margin: 0; font-weight: 600;">
+        Your ride is now full. No more passengers can join.
+      </p>
+    </div>
+    ` : `
+    <p style="font-size: 14px; color: #444444; margin: 0 0 24px; line-height: 1.6;">
+      You still have <strong>${seatsLeft} seat${seatsLeft !== 1 ? "s" : ""}</strong> available.
+    </p>
+    `}
+
+    
+      href="${process.env.CLIENT_URL}/dashboard/carpool/my-rides"
+      style="
+        display: inline-block;
+        background-color: #0d9488;
+        color: #ffffff;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 14px 28px;
+        border-radius: 8px;
+        margin-bottom: 28px;
+      "
+    >View My Rides</a>
+
+    <p style="font-size: 13px; color: #888888; margin: 0; line-height: 1.6;">
+      You received this email because someone joined your EkSathe carpool ride.
+    </p>
+  `);
+
+  await transporter.sendMail({
+    from:    `"EkSathe" <${process.env.EMAIL_USER}>`,
+    to:      toEmail,
+    subject: `${passengerName} joined your ride to ${route.destination.area}`,
+    html,
+  });
+};

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../lib/api";
 
 const UNIVERSITIES = [
@@ -22,10 +22,11 @@ export default function UniversityRouteDropdown({ onRouteSelect, disabled = fals
       .finally(() => setLoading(false));
   }, []);
 
+  // Fix 5 — only update filtered list, don't clear selected route
   useEffect(() => {
-    setFiltered(uniFilter === "All" ? presets : presets.filter((r) => r.university === uniFilter));
-    setSelected("");
-    onRouteSelect(null);
+    setFiltered(
+      uniFilter === "All" ? presets : presets.filter((r) => r.university === uniFilter)
+    );
   }, [uniFilter, presets]);
 
   const handleChange = (e) => {
@@ -36,20 +37,30 @@ export default function UniversityRouteDropdown({ onRouteSelect, disabled = fals
     if (route) onRouteSelect(route);
   };
 
+  const handleUniFilter = (u) => {
+    setUniFilter(u);
+    // Only clear selection if current selected route doesn't belong to new uni filter
+    if (u !== "All" && selected) {
+      const currentRoute = presets.find((r) => r.id === selected);
+      if (currentRoute && currentRoute.university !== u) {
+        setSelected("");
+        onRouteSelect(null);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2">
-
-      {/* University filter pills */}
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {UNIVERSITIES.map((u) => (
           <button
             key={u}
             type="button"
-            onClick={() => setUniFilter(u)}
+            onClick={() => handleUniFilter(u)}
             className={`flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-full border transition-all ${
               uniFilter === u
-                ? "bg-emerald-600 border-emerald-600 text-white"
-                : "bg-white border-gray-200 text-gray-600 hover:border-emerald-300 hover:text-emerald-700"
+                ? "bg-teal-600 border-teal-600 text-white"
+                : "bg-white border-gray-200 text-gray-600 hover:border-teal-300 hover:text-teal-700"
             }`}
           >
             {u}
@@ -57,13 +68,12 @@ export default function UniversityRouteDropdown({ onRouteSelect, disabled = fals
         ))}
       </div>
 
-      {/* Route dropdown */}
       <select
         value={selected}
         onChange={handleChange}
         disabled={disabled || loading}
         className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800
-                   focus:outline-none focus:ring-2 focus:ring-emerald-500
+                   focus:outline-none focus:ring-2 focus:ring-teal-500
                    disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <option value="">
@@ -76,17 +86,16 @@ export default function UniversityRouteDropdown({ onRouteSelect, disabled = fals
         ))}
       </select>
 
-      {/* Selected route detail */}
       {selected && (() => {
         const p = presets.find((r) => r.id === selected);
         return p ? (
           <div className="flex items-center gap-2 mt-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"/>
+            <div className="w-1.5 h-1.5 rounded-full bg-teal-500"/>
             <span className="text-xs text-gray-500">{p.origin.name}</span>
             <span className="text-gray-300 text-xs">to</span>
             <div className="w-1.5 h-1.5 rounded-full bg-rose-500"/>
             <span className="text-xs text-gray-500">{p.destination.name}</span>
-            <span className="ml-auto text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+            <span className="ml-auto text-xs font-medium text-teal-600 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5">
               ~{p.estimatedKm} km
             </span>
           </div>
