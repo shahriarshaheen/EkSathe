@@ -219,7 +219,7 @@ const RegisterPage = () => {
         <FormField
           id="name"
           label="Full name"
-          placeholder="Aditya Sharma"
+          placeholder="Please enter your full name"
           error={errors.name?.message}
           {...register("name")}
         />
@@ -241,7 +241,7 @@ const RegisterPage = () => {
           id="phone"
           label="Phone number"
           type="tel"
-          placeholder="9876543210"
+          placeholder="01XXXXXXXXX"
           error={errors.phone?.message}
           hint="10–15 digits, no spaces"
           {...register("phone")}
@@ -252,7 +252,7 @@ const RegisterPage = () => {
           <FormField
             id="studentId"
             label="Student ID"
-            placeholder="e.g. 2021BCS045"
+            placeholder="e.g. 20202020"
             error={errors.studentId?.message}
             hint="Your official university student ID for verification"
             {...register("studentId")}
