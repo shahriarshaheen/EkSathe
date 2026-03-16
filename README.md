@@ -8,33 +8,33 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 
 ## Project Status
 
-| Module                              | Status      |
-| ----------------------------------- | ----------- |
-| Authentication System               | ✅ Complete |
-| Role-based Dashboards               | ✅ Complete |
-| University Email Restriction        | ✅ Complete |
-| Student ID Verification (Admin)     | ✅ Complete |
-| Profile Photo & Edit Page           | ✅ Complete |
-| Parking Spot Listing (F-01)         | ✅ Complete |
-| Interactive Map View (F-02)         | ✅ Complete |
-| Booking Calendar System (F-03)      | ✅ Complete |
-| SSLCommerz Payment (F-04)           | ✅ Complete |
-| Homeowner Earnings Dashboard (F-05) | ✅ Complete |
-| Post Carpool Route (F-06)           | 🔲 Sprint 2 |
-| Pre-set University Routes (F-07)    | 🔲 Sprint 2 |
-| Gender-Safe Carpool Filter (F-08)   | 🔲 Sprint 2 |
-| Cost Splitting Calculator (F-09)    | 🔲 Sprint 2 |
-| Post-Ride Rating System (F-10)      | 🔲 Sprint 2 |
-| SOS Panic Button (F-11)             | ✅ Complete |
-| Live Trip Sharing (F-12)            | 🔲 Sprint 3 |
-| Route Deviation Alert (F-13)        | 🔲 Sprint 3 |
-| Anonymous Incident Reporting (F-14) | ✅ Complete |
-| Admin Moderation Dashboard (F-15)   | 🔲 Sprint 3 |
-| Smart Demand Indicator (F-16)       | 🔲 Sprint 4 |
-| Dynamic Pricing Nudge (F-17)        | 🔲 Sprint 4 |
-| Firebase Push Notifications (F-18)  | 🔲 Sprint 4 |
-| Advanced Search & Filter (F-19)     | 🔲 Sprint 4 |
-| Trust Score & Badge System (F-20)   | 🔲 Sprint 4 |
+| Module                              | Status                  |
+| ----------------------------------- | ----------------------- |
+| Authentication System               | ✅ Complete             |
+| Role-based Dashboards               | ✅ Complete             |
+| University Email Restriction        | ✅ Complete             |
+| Student ID Verification (Admin)     | ✅ Complete             |
+| Profile Photo & Edit Page           | ✅ Complete             |
+| Parking Spot Listing (F-01)         | ✅ Complete             |
+| Interactive Map View (F-02)         | ✅ Complete             |
+| Booking Calendar System (F-03)      | ✅ Complete             |
+| SSLCommerz Payment (F-04)           | ✅ Complete             |
+| Homeowner Earnings Dashboard (F-05) | ✅ Complete             |
+| Post Carpool Route (F-06)           | ✅ Complete             |
+| Pre-set University Routes (F-07)    | ✅ Complete             |
+| Gender-Safe Carpool Filter (F-08)   | ✅ Complete             |
+| Cost Splitting Calculator (F-09)    | ✅ Complete             |
+| Post-Ride Rating System (F-10)      | 🔲 Sprint 2 — Remaining |
+| SOS Panic Button (F-11)             | ✅ Complete             |
+| Live Trip Sharing (F-12)            | 🔲 Sprint 3             |
+| Route Deviation Alert (F-13)        | 🔲 Sprint 3             |
+| Anonymous Incident Reporting (F-14) | ✅ Complete             |
+| Admin Moderation Dashboard (F-15)   | ✅ Complete             |
+| Smart Demand Indicator (F-16)       | 🔲 Sprint 4             |
+| Dynamic Pricing Nudge (F-17)        | 🔲 Sprint 4             |
+| Firebase Push Notifications (F-18)  | 🔲 Sprint 4             |
+| Advanced Search & Filter (F-19)     | 🔲 Sprint 4             |
+| Trust Score & Badge System (F-20)   | 🔲 Sprint 4             |
 
 ---
 
@@ -59,20 +59,21 @@ EkSathe/
 - React Router v6
 - Axios (with interceptors)
 - React Hook Form + Zod
+- Framer Motion (animations)
 - Sonner (toast notifications)
 - Lucide React (icons)
-- React Dropzone (photo uploads)
-- Leaflet + React Leaflet (interactive maps)
+- Leaflet + React Leaflet (maps — parking + carpool)
 - Recharts (earnings charts)
+- @formkit/auto-animate
 
 ### Backend
 
 - Node.js (ES Modules)
 - Express 4.x
 - MongoDB Atlas + Mongoose
-- JWT Authentication (jsonwebtoken)
-- bcryptjs (password hashing)
-- Nodemailer (email service + SOS alerts)
+- JWT Authentication
+- bcryptjs
+- Nodemailer (email + SOS alerts)
 - Multer + Cloudinary (photo uploads)
 - express-validator
 - SSLCommerz (payment gateway)
@@ -83,237 +84,156 @@ EkSathe/
 
 ### Authentication System
 
-Full auth flow with JWT, OTP email verification, and role-based access.
-
 - Register with role selection (student / homeowner / admin)
 - Email OTP verification (6-digit, 1hr expiry)
 - Login with JWT (stateless, 7d expiry)
-- Forgot password + reset password via email link
-- JWT middleware — attaches `{ id, role, status }` to `req.user`
+- Forgot password + reset via email link
 - Role-based authorization middleware
 
-**Auth Endpoints:**
-
-```
-POST   /api/auth/register
-POST   /api/auth/verify-email
-POST   /api/auth/login
-GET    /api/auth/me
-POST   /api/auth/logout
-POST   /api/auth/forgot-password
-POST   /api/auth/reset-password
-```
+**Endpoints:** `POST /api/auth/register`, `verify-email`, `login`, `GET /api/auth/me`, `logout`, `forgot-password`, `reset-password`
 
 ---
 
 ### University Email Restriction
 
-Students must register with a verified Bangladeshi university email.
-
-- 27 universities supported — 12 private + 15 public
+- 27 universities — 12 private + 15 public
 - Searchable university dropdown on registration
-- Email domain validated against selected university at both frontend and backend
-- Email hint shown dynamically: "Use your @northsouth.edu email"
-
-**Supported universities include:** NSU, BRAC, AIUB, IUB, UIU, EWU, AUST, DIU, DU, BUET, JU, SUST, RU, CU, KU, RUET, CUET, KUET and more.
+- Email domain validated frontend (Zod) + backend
 
 ---
 
 ### Student ID Verification (Admin)
 
-Admins can manually verify student ID submissions.
-
-- Students submit their university ID on registration
-- Admin dashboard shows live pending verification count
-- Admin can approve or reject with optional reason
+- Admin approves/rejects student ID submissions
 - Approval sends branded email + adds 10 trust score points
-- Rejection sends email with reason
-- Three tabs: Pending / Approved / Rejected with counts
-- Search by name, email, or student ID
+- Three tabs: Pending / Approved / Rejected with search
 
-**Admin Endpoints:**
-
-```
-GET    /api/admin/stats
-GET    /api/admin/students
-GET    /api/admin/students/pending
-PUT    /api/admin/students/:id/approve
-PUT    /api/admin/students/:id/reject
-```
+**Endpoints:** `GET /api/admin/stats`, `students`, `students/pending`, `PUT students/:id/approve`, `reject`
 
 ---
 
 ### Profile Photo & Edit Page
 
-All users can upload a profile photo and edit their details.
+- Upload/remove photo (Cloudinary)
+- Edit name, phone, gender
+- Sidebar shows real photo + links to profile page
 
-- Upload profile photo stored on Cloudinary
-- Edit name, phone number, gender
-- Remove profile photo
-- Read-only: email, student ID, university — cannot be changed after registration
-- Profile photo shown in sidebar and all dashboard cards
-- Sidebar user card is clickable — navigates to profile page
-
-**User Endpoints:**
-
-```
-GET    /api/user/profile
-PUT    /api/user/profile
-DELETE /api/user/profile/photo
-```
-
----
-
-### Role-based Dashboards
-
-Each role gets a dedicated dashboard UI after login.
-
-- **Student Dashboard** — teal theme, campus-focused, parking/carpool/SOS cards
-- **Homeowner Dashboard** — amber theme, listings/bookings/earnings management
-- **Admin Dashboard** — purple theme, real stats, pending verification alerts, system status
+**Endpoints:** `GET/PUT /api/user/profile`, `DELETE /api/user/profile/photo`
 
 ---
 
 ### Parking Spot Listing (F-01)
 
-Homeowners can list their parking spots with full details and photos.
+- Create listing with photos, GPS coords, hours, days, price
+- Geospatial indexing (2dsphere)
 
-- Create listing with title, description, address, GPS coordinates
-- Upload up to 3 photos (stored on Cloudinary, auto-resized)
-- Set price per day in Bangladeshi Taka (৳)
-- Set available hours and days of the week
-- Choose spot type: garage, driveway, or open area
-- Auto-detect location via browser geolocation
-- View, activate/deactivate, and delete own listings
-- Geospatial indexing (2dsphere) for proximity queries
-
-**Parking Endpoints:**
-
-```
-GET    /api/parking              # All active spots (public)
-GET    /api/parking/:id          # Single spot (public)
-POST   /api/parking              # Create listing (homeowner)
-GET    /api/parking/my/listings  # Own listings (homeowner)
-PUT    /api/parking/:id          # Update listing (homeowner)
-DELETE /api/parking/:id          # Delete listing (homeowner)
-```
+**Endpoints:** `GET/POST /api/parking`, `GET /api/parking/:id`, `my/listings`, `PUT/:id`, `DELETE/:id`
 
 ---
 
 ### Interactive Map View (F-02)
 
-Students can browse all available parking spots on an interactive map.
-
-- Full screen map powered by Leaflet + OpenStreetMap (no API key, fully free)
-- Green markers for every active parking spot from the database
-- Click marker → popup with title, price, quick view button
-- Side panel with full spot details — photos, hours, days, owner info
-- Near me button — detects user location and flies map to area
-- Blue marker shows user's current location
+- Leaflet + OpenStreetMap (no API key)
+- Floating search bar, animated side panel
+- Near me button, user location marker
 
 ---
 
 ### Booking Calendar System (F-03)
 
-Students can book parking spots with date and time selection.
+- Date/time selection with conflict checking
+- My Bookings page
 
-- Calendar UI for selecting booking date and time slot
-- Backend conflict checking — no double bookings
-- Booking confirmation sent via email
-- My Bookings page to view booking history and status
-
-**Booking Endpoints:**
-
-```
-POST   /api/bookings
-GET    /api/bookings/my
-```
+**Endpoints:** `POST /api/bookings`, `GET /api/bookings/my`
 
 ---
 
 ### SSLCommerz Payment (F-04)
 
-Students can pay for bookings online via SSLCommerz.
+- bKash, Nagad, cards
+- Success/fail/cancel redirect pages
 
-- Supports bKash, Nagad, cards and other local payment methods
-- Payment sandbox integration
-- On success: booking status updates to confirmed, homeowner notified
-- Success, fail, and cancel redirect pages
-
-**Payment Endpoints:**
-
-```
-POST   /api/payment/init
-POST   /api/payment/success
-POST   /api/payment/fail
-POST   /api/payment/cancel
-```
+**Endpoints:** `POST /api/payment/init`, `success`, `fail`, `cancel`
 
 ---
 
 ### Homeowner Earnings Dashboard (F-05)
 
-Homeowners can track their income and listing performance.
+- Monthly earnings chart (Recharts)
+- Listing performance table
 
-- Stats: total earnings, bookings, active listings, avg per booking
-- Monthly earnings bar chart — last 6 months (Recharts)
-- Listing performance table with photo, price, booking count, status
+---
+
+### Carpool System (F-06, F-07, F-08, F-09)
+
+Full carpool platform with map-based route pinning:
+
+- **Post a ride** — 3-step wizard with Leaflet map picker
+  - Step 1: Select university preset route OR pin custom pickup/dropoff on map
+  - Nominatim reverse geocoding — tap gives real address automatically
+  - Step 2: Set departure time, seats, price, gender-safe toggle, notes
+  - Step 3: Review with map preview before posting
+- **Browse rides** — filter by university route, gender-safe toggle, custom search
+- **Join a ride** — double booking check (blocks joining two rides within 2 hours)
+- **Leave a ride** — passenger can leave any active ride
+- **Cancel a ride** — driver cancels own ride
+- **My Rides page** — active/past tabs, posted + joined rides, expandable map per ride, passenger list for drivers
+- **Gender-safe filter** — female-only rides visible only to female students
+- **Price suggestion** — auto-calculated from km distance
+- **Preset routes** — 40 routes across 10 universities in Dhaka
+
+**Endpoints:**
+
+```
+GET    /api/carpool/presets
+GET    /api/carpool/routes
+POST   /api/carpool/routes
+POST   /api/carpool/routes/:id/join
+DELETE /api/carpool/routes/:id/leave
+PATCH  /api/carpool/routes/:id/cancel
+GET    /api/carpool/my
+GET    /api/carpool/admin/routes          (admin)
+PATCH  /api/carpool/admin/routes/:id/cancel (admin)
+```
 
 ---
 
 ### SOS Panic Button (F-11)
 
-Students can trigger an emergency alert with one tap.
+- One-tap GPS alert to up to 3 emergency contacts
+- Branded email with Google Maps link
+- Pulsing animation when contacts are set
 
-- Large red SOS button — detects GPS and sends alert instantly
-- Professional branded email to up to 3 emergency contacts
-- Email includes EkSathe branding, student profile card, static map image, Google Maps link
-- Recommended actions panel (call, go to location, call 999)
-- Manage up to 3 emergency contacts (name, email, relation)
-
-**SOS Endpoints:**
-
-```
-POST   /api/sos/trigger
-GET    /api/sos/contacts
-POST   /api/sos/contacts
-DELETE /api/sos/contacts/:id
-```
+**Endpoints:** `POST /api/sos/trigger`, `GET/POST /api/sos/contacts`, `DELETE /api/sos/contacts/:id`
 
 ---
 
 ### Anonymous Incident Reporting (F-14)
 
-Students can report safety incidents anonymously with GPS location.
-
 - Categories: Harassment, Unsafe Driving, Theft, Suspicious Activity, Other
-- Description field with minimum 20 character requirement
-- GPS coordinates auto-captured from browser on page load
-- Optional text location field as fallback if GPS unavailable
-- Reports are fully anonymous — reporter identity hidden from admin
-- Admin panel shows all incidents in a table with category, description, location, status and date
-- Admin can update status: Pending → Reviewed → Resolved
-- Status badges color-coded: amber (pending), teal (reviewed), stone (resolved)
+- GPS auto-captured, anonymous submission
+- Admin table with status management (Pending → Reviewed → Resolved)
 
-**Incident Endpoints:**
+**Endpoints:** `POST /api/incidents`, `GET /api/incidents` (admin), `PATCH /api/incidents/:id/status` (admin)
 
-```
-POST   /api/incidents              # Submit report (any authenticated user)
-GET    /api/incidents              # View all reports (admin only)
-PATCH  /api/incidents/:id/status   # Update status (admin only)
-```
+---
+
+### Admin Moderation Dashboard (F-15)
+
+- Real-time stats: users, students, pending verifications, active carpools
+- Student ID verification panel with approve/reject
+- Carpool moderation panel — view all rides, force cancel, filter by status, search by driver
+- System status panel
 
 ---
 
 ## Environment Setup
 
-### Backend
-
-Create `server/.env`:
+### Backend — `server/.env`
 
 ```
 PORT=5000
-MONGODB_URI=your_mongodb_atlas_connection_string
+MONGODB_URI=your_mongodb_atlas_uri
 JWT_SECRET=your_jwt_secret
 CLIENT_URL=http://localhost:5173
 EMAIL_USER=your_gmail@gmail.com
@@ -325,96 +245,61 @@ SSLCOMMERZ_STORE_ID=your_store_id
 SSLCOMMERZ_STORE_PASSWORD=your_store_password
 ```
 
-Run backend:
-
 ```bash
-cd server
-npm install
-npm run dev
+cd server && npm install && npm run dev
 ```
 
-### Frontend
-
-Create `client/.env`:
+### Frontend — `client/.env`
 
 ```
 VITE_API_URL=http://localhost:5000/api
 ```
 
-Run frontend:
-
 ```bash
-cd client
-npm install
-npm run dev
+cd client && npm install && npm run dev
 ```
-
-Frontend runs at `http://localhost:5173`
-
-> **Note:** Gmail requires an App Password — go to myaccount.google.com/apppasswords to generate one.
 
 ---
 
 ## Sprint Plan
 
-| Sprint | Theme               | Weeks | Goal                                                 |
-| ------ | ------------------- | ----- | ---------------------------------------------------- |
-| S1     | Parking Marketplace | 1–2   | Book and pay for parking spots                       |
-| S2     | Carpooling Network  | 3–4   | Post and join verified carpool rides                 |
-| S3     | Safety & Trust      | 5–6   | SOS, live tracking, incident reporting               |
-| S4     | Smart Features      | 7–8   | Push notifications, search, trust badges, deployment |
+| Sprint | Theme               | Status                             |
+| ------ | ------------------- | ---------------------------------- |
+| S1     | Parking Marketplace | ✅ Complete                        |
+| S2     | Carpooling Network  | ✅ Complete                        |
+| S3     | Safety & Trust      | 🔲 Partial (F-11, F-14, F-15 done) |
+| S4     | Smart Features      | 🔲 Pending                         |
 
-**Team assignments (5 features each):**
-
-| Teammate | Sprint 1          | Sprint 2    | Sprint 3       | Sprint 4    |
-| -------- | ----------------- | ----------- | -------------- | ----------- |
-| Shahriar | F-01 ✅           | F-08        | F-11 ✅ + F-15 | F-17        |
-| Sushmita | F-02 ✅ + F-05 ✅ | F-06        | F-13           | F-16        |
-| Fauzia   | F-03 ✅           | F-07 + F-10 | F-12           | F-19 + F-20 |
-| Tasnuva  | F-04 ✅           | F-09        | F-14 ✅        | F-18        |
+| Teammate | Sprint 1          | Sprint 2       | Sprint 3          | Sprint 4    |
+| -------- | ----------------- | -------------- | ----------------- | ----------- |
+| Shahriar | F-01 ✅           | F-08 ✅        | F-11 ✅ + F-15 ✅ | F-17        |
+| Sushmita | F-02 ✅ + F-05 ✅ | F-06 ✅        | F-13              | F-16        |
+| Fauzia   | F-03 ✅           | F-07 ✅ + F-10 | F-12              | F-19 + F-20 |
+| Tasnuva  | F-04 ✅           | F-09 ✅        | F-14 ✅           | F-18        |
 
 ---
 
 ## Development Workflow
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-org/eksathe.git
-
-# 2. Create a new feature branch
 git checkout -b feature/feature-name
-
-# 3. Make your changes
-
-# 4. Commit
 git add .
-git commit -m "feat: description of what you built"
-
-# 5. Push
+git commit -m "feat: description"
 git push origin feature/feature-name
-
-# 6. Open a Pull Request to main
+# Open Pull Request to main
 ```
 
-> Direct pushes to `main` are not allowed. All changes go through Pull Requests.
-
-**Commit message format:**
-
-```
-feat: add anonymous incident reporting (F-14)
-fix: resolve merge conflict in App.jsx
-chore: update readme and sprint status
-```
+**Commit format:** `feat:` / `fix:` / `chore:`
 
 ---
 
 ## Team Rules
 
-- Never modify auth files — auth is complete and tested
-- Build backend first, then frontend for each feature
-- Test with all 3 roles (student, homeowner, admin)
-- Never commit `.env` files — use `.env.example` only
-- Use ES modules throughout — no `require()`
+- Never modify auth files
+- Backend first, then frontend
+- Test with all 3 roles
+- Never commit `.env`
+- ES modules only — no `require()`
 
 ---
 

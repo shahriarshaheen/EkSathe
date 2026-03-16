@@ -19,7 +19,7 @@ import ProfilePage from "./features/profile/pages/ProfilePage";
 
 // Admin
 import VerificationsPage from "./features/admin/pages/VerificationsPage";
-
+import AdminCarpoolPage from "./pages/AdminCarpoolPage";
 // Auth pages
 import RegisterPage from "./features/auth/pages/RegisterPage";
 import VerifyEmailPage from "./features/auth/pages/VerifyEmailPage";
@@ -42,7 +42,6 @@ import BookSpotPage from "./features/bookings/pages/BookSpotPage";
 import PaymentSuccessPage from "./features/payment/pages/PaymentSuccessPage";
 import PaymentFailPage from "./features/payment/pages/PaymentFailPage";
 import PaymentCancelPage from "./features/payment/pages/PaymentCancelPage";
-
 
 const App = () => {
   return (
@@ -143,6 +142,14 @@ const App = () => {
             }
           />
           <Route
+            path="/dashboard/admin/carpool"
+            element={
+              <ProtectedRoute>
+                <AdminCarpoolPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/incidents"
             element={
               <ProtectedRoute>
@@ -183,9 +190,9 @@ const App = () => {
             path="/dashboard/carpool/my-rides"
             element={
               <ProtectedRoute>
-                 <MyRides />
+                <MyRides />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Payment */}
@@ -194,23 +201,31 @@ const App = () => {
           <Route path="/payment/cancel" element={<PaymentCancelPage />} />
           {/* Carpool */}
 
-        <Route
-          path="/dashboard/carpool"
-          element={
-            <ProtectedRoute>
-              <BrowseCarpool />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/dashboard/carpool"
+            element={
+              <ProtectedRoute>
+                <BrowseCarpool />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/dashboard/carpool/post"
-          element={
-            <ProtectedRoute>
-              <PostCarpool />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/dashboard/carpool/post"
+            element={
+              <ProtectedRoute>
+                <PostCarpool />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/carpool/my-rides"
+            element={
+              <ProtectedRoute>
+                <MyRides />
+              </ProtectedRoute>
+            }
+          />
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 

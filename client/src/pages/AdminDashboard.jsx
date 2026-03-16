@@ -13,6 +13,7 @@ import {
   UserX,
   Clock,
   CheckCircle,
+  Car,
 } from "lucide-react";
 import DashboardLayout from "../components/ui/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
@@ -21,6 +22,7 @@ import api from "../lib/api";
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { path: "/dashboard/verifications", label: "Verifications", icon: UserCheck },
+  { path: "/dashboard/admin/carpool", label: "Carpool Rides", icon: Car },
   { path: "/dashboard/users", label: "Users", icon: Users, soon: true },
   {
     path: "/dashboard/listings",
@@ -43,9 +45,9 @@ const navItems = [
 ];
 
 const StatCard = ({ label, value, sub, icon: Icon, accent, bg, trend }) => (
-  <div className="bg-white rounded-xl border border-stone-200 p-5">
+  <div className="bg-white rounded-2xl border border-stone-200 p-5 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
     <div className="flex items-start justify-between mb-3">
-      <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">
+      <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
         {label}
       </p>
       <div
@@ -73,7 +75,7 @@ const SystemRow = ({ icon: Icon, label, status, color, bg }) => (
       <p className="text-sm text-stone-700 font-medium">{label}</p>
     </div>
     <span
-      className={`text-xs font-semibold px-2 py-1 rounded-full ${
+      className={`text-xs font-bold px-2 py-1 rounded-full ${
         status === "Operational"
           ? "bg-green-50 text-green-600"
           : status === "Coming Soon"
@@ -94,6 +96,7 @@ const AdminDashboard = () => {
     totalStudents: 0,
     pendingVerifications: 0,
     totalHomeowners: 0,
+    activeCarpools: 0,
   });
 
   useEffect(() => {
@@ -102,8 +105,16 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const res = await api.get("/admin/stats");
-      setStats(res.data.stats);
+      const [adminRes, carpoolRes] = await Promise.all([
+        api.get("/admin/stats"),
+        api
+          .get("/carpool/admin/routes?status=open")
+          .catch(() => ({ data: { data: [] } })),
+      ]);
+      setStats({
+        ...adminRes.data.stats,
+        activeCarpools: carpoolRes.data.data?.length || 0,
+      });
     } catch (err) {
       console.error("Failed to fetch stats:", err);
     }
@@ -116,7 +127,7 @@ const AdminDashboard = () => {
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-1">
             <ShieldCheck className="w-5 h-5 text-purple-600" />
-            <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">
+            <span className="text-xs font-bold text-purple-600 uppercase tracking-widest">
               Admin Console
             </span>
           </div>
@@ -155,12 +166,12 @@ const AdminDashboard = () => {
             bg="bg-amber-50"
           />
           <StatCard
-            label="Uptime"
-            value="100%"
-            sub="All systems go"
-            icon={Activity}
-            accent="text-green-600"
-            bg="bg-green-50"
+            label="Active Carpools"
+            value={stats.activeCarpools}
+            sub="Open rides now"
+            icon={Car}
+            accent="text-teal-600"
+            bg="bg-teal-50"
             trend
           />
         </div>
@@ -169,14 +180,14 @@ const AdminDashboard = () => {
         {stats.pendingVerifications > 0 && (
           <div
             onClick={() => navigate("/dashboard/verifications")}
-            className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center justify-between cursor-pointer hover:bg-amber-100 transition-colors"
+            className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-center justify-between cursor-pointer hover:bg-amber-100 transition-colors"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
                 <UserCheck className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-amber-900">
+                <p className="text-sm font-bold text-amber-900">
                   {stats.pendingVerifications} student
                   {stats.pendingVerifications !== 1 ? "s" : ""} waiting for ID
                   verification
@@ -193,8 +204,8 @@ const AdminDashboard = () => {
         {/* Content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* System status */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-stone-200 p-6">
-            <h3 className="text-sm font-semibold text-stone-700 mb-4">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 p-6">
+            <h3 className="text-sm font-bold text-stone-700 mb-4 uppercase tracking-widest">
               System Status
             </h3>
             <SystemRow
@@ -221,20 +232,27 @@ const AdminDashboard = () => {
             <SystemRow
               icon={ParkingSquare}
               label="Parking Module"
-              status="Coming Soon"
-              color="text-stone-400"
-              bg="bg-stone-100"
+              status="Operational"
+              color="text-green-600"
+              bg="bg-green-50"
             />
             <SystemRow
-              icon={Activity}
+              icon={Car}
               label="Carpool Module"
-              status="Coming Soon"
-              color="text-stone-400"
-              bg="bg-stone-100"
+              status="Operational"
+              color="text-green-600"
+              bg="bg-green-50"
             />
             <SystemRow
               icon={AlertTriangle}
               label="SOS & Safety"
+              status="Operational"
+              color="text-green-600"
+              bg="bg-green-50"
+            />
+            <SystemRow
+              icon={Activity}
+              label="Push Notifications"
               status="Coming Soon"
               color="text-stone-400"
               bg="bg-stone-100"
@@ -242,8 +260,8 @@ const AdminDashboard = () => {
           </div>
 
           {/* Admin profile */}
-          <div className="bg-white rounded-xl border border-stone-200 p-5">
-            <h3 className="text-sm font-semibold text-stone-700 mb-4">
+          <div className="bg-white rounded-2xl border border-stone-200 p-5">
+            <h3 className="text-sm font-bold text-stone-700 mb-4 uppercase tracking-widest">
               Admin Profile
             </h3>
             <div className="flex flex-col items-center text-center gap-3">
@@ -261,24 +279,22 @@ const AdminDashboard = () => {
                 )}
               </div>
               <div>
-                <p className="font-semibold text-stone-800 text-sm">
-                  {user?.name}
-                </p>
+                <p className="font-bold text-stone-900 text-sm">{user?.name}</p>
                 <p className="text-xs text-stone-400 mt-0.5">{user?.email}</p>
-                <span className="inline-block mt-1.5 text-xs font-semibold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                <span className="inline-block mt-1.5 text-xs font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
                   Administrator
                 </span>
               </div>
               <div className="w-full space-y-2">
-                <div className="flex items-center justify-between bg-stone-50 rounded-lg px-3 py-2">
+                <div className="flex items-center justify-between bg-stone-50 rounded-xl px-3 py-2">
                   <span className="text-xs text-stone-500">Access Level</span>
-                  <span className="text-xs font-semibold text-purple-600">
+                  <span className="text-xs font-bold text-purple-600">
                     Full Access
                   </span>
                 </div>
-                <div className="flex items-center justify-between bg-green-50 rounded-lg px-3 py-2">
+                <div className="flex items-center justify-between bg-green-50 rounded-xl px-3 py-2">
                   <span className="text-xs text-stone-500">Account</span>
-                  <span className="text-xs font-medium text-green-600 flex items-center gap-1">
+                  <span className="text-xs font-bold text-green-600 flex items-center gap-1">
                     <CheckCircle className="w-3 h-3" /> Verified
                   </span>
                 </div>
@@ -296,8 +312,8 @@ const AdminDashboard = () => {
         </div>
 
         {/* Moderation queue */}
-        <div className="bg-white rounded-xl border border-stone-200 p-6">
-          <h3 className="text-sm font-semibold text-stone-700 mb-4">
+        <div className="bg-white rounded-2xl border border-stone-200 p-6">
+          <h3 className="text-sm font-bold text-stone-700 mb-4 uppercase tracking-widest">
             Moderation Queue
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -311,6 +327,14 @@ const AdminDashboard = () => {
                 path: "/dashboard/verifications",
               },
               {
+                icon: Car,
+                label: "Active Carpools",
+                count: stats.activeCarpools,
+                color: "text-teal-600",
+                bg: "bg-teal-50",
+                path: "/dashboard/admin/carpool",
+              },
+              {
                 icon: UserX,
                 label: "Flagged Accounts",
                 count: 0,
@@ -318,19 +342,11 @@ const AdminDashboard = () => {
                 bg: "bg-red-50",
                 path: null,
               },
-              {
-                icon: AlertTriangle,
-                label: "Unresolved Reports",
-                count: 0,
-                color: "text-amber-600",
-                bg: "bg-amber-50",
-                path: null,
-              },
             ].map((item) => (
               <div
                 key={item.label}
                 onClick={() => item.path && navigate(item.path)}
-                className={`flex items-center gap-3 bg-stone-50 rounded-xl p-4 ${item.path ? "cursor-pointer hover:bg-stone-100 transition-colors" : ""}`}
+                className={`flex items-center gap-3 bg-stone-50 rounded-2xl p-4 ${item.path ? "cursor-pointer hover:bg-stone-100 transition-colors" : ""}`}
               >
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}
