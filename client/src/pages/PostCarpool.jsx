@@ -65,14 +65,25 @@ export default function PostCarpool() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
 
-        <div className="mb-8">
-          <button onClick={() => navigate("/dashboard/carpool")}
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 mb-4 transition-colors">
+        {/* FIX 3 — Breadcrumb back navigation */}
+        <div className="flex items-center gap-2 mb-6">
+          <button onClick={() => navigate("/dashboard")}
+            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6"/>
             </svg>
-            Back to rides
+            Dashboard
           </button>
+          <span className="text-gray-300">/</span>
+          <button onClick={() => navigate("/dashboard/carpool")}
+            className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            Carpool
+          </button>
+          <span className="text-gray-300">/</span>
+          <span className="text-sm text-gray-600 font-medium">Post Ride</span>
+        </div>
+
+        <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Post a Carpool Ride</h1>
           <p className="text-sm text-gray-500 mt-1">Share your commute and split fuel costs</p>
         </div>
@@ -92,7 +103,7 @@ export default function PostCarpool() {
               <span className={`text-xs font-medium ${step === s ? "text-teal-700" : "text-gray-400"}`}>
                 {s === 1 ? "Pick route" : s === 2 ? "Trip details" : "Confirm"}
               </span>
-              {s < 3 && <div className={`h-px flex-1 ${step > s ? "bg-emerald-300" : "bg-gray-200"}`}/>}
+              {s < 3 && <div className={`h-px flex-1 ${step > s ? "bg-teal-300" : "bg-gray-200"}`}/>}
             </div>
           ))}
         </div>
@@ -108,11 +119,14 @@ export default function PostCarpool() {
               <UniversityRouteDropdown onRouteSelect={handleRouteSelect} />
             </div>
             <div className="px-6 pb-6 flex flex-col gap-3">
-              <button onClick={() => { if (selectedPreset) setStep(2); }} disabled={!selectedPreset}
+              <button
+                onClick={() => { if (selectedPreset) setStep(2); }}
+                disabled={!selectedPreset}
                 className="w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm font-bold transition-all">
                 Continue with this route
               </button>
-              <button onClick={() => { setSelectedPreset(null); setOrigin(""); setDestination(""); setStep(2); }}
+              <button
+                onClick={() => { setSelectedPreset(null); setOrigin(""); setDestination(""); setStep(2); }}
                 className="w-full py-3 rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 hover:border-teal-400 hover:text-teal-600 transition-all">
                 Enter a custom route instead
               </button>
@@ -123,11 +137,12 @@ export default function PostCarpool() {
         {/* STEP 2 */}
         {step === 2 && (
           <div className="flex flex-col gap-4">
+
             {selectedPreset ? (
               <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 flex items-center justify-between">
                 <div>
                   <p className="text-xs text-teal-600 font-medium mb-0.5">{selectedPreset.university}</p>
-                  <p className="text-sm font-semibold text-emerald-900">
+                  <p className="text-sm font-semibold text-teal-900">
                     {selectedPreset.origin.area} {ARROW} {selectedPreset.destination.area}
                   </p>
                   <p className="text-xs text-teal-600 mt-0.5">
@@ -144,12 +159,14 @@ export default function PostCarpool() {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Custom Route</p>
                 <div className="relative">
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-teal-500"/>
-                  <input value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="Pickup point"
+                  <input value={origin} onChange={(e) => setOrigin(e.target.value)}
+                    placeholder="Pickup point"
                     className="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"/>
                 </div>
                 <div className="relative">
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-rose-500"/>
-                  <input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Drop-off point"
+                  <input value={destination} onChange={(e) => setDestination(e.target.value)}
+                    placeholder="Drop-off point"
                     className="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50"/>
                 </div>
               </div>
@@ -201,7 +218,7 @@ export default function PostCarpool() {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <label className="flex items-start gap-3 cursor-pointer">
                 <div onClick={() => setGenderSafe(!genderSafe)}
-                  className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center flex-shrink-0 border-2 transition-all ${genderSafe ? "bg-pink-500 border-pink-500" : "border-gray-300"}`}>
+                  className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center flex-shrink-0 border-2 transition-all cursor-pointer ${genderSafe ? "bg-pink-500 border-pink-500" : "border-gray-300"}`}>
                   {genderSafe && (
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12"/>
@@ -252,13 +269,13 @@ export default function PostCarpool() {
               </div>
               <div className="divide-y divide-gray-50">
                 {[
-                  ["Pickup",   origin],
-                  ["Drop-off", destination],
+                  ["Pickup",           origin],
+                  ["Drop-off",         destination],
                   ["Departure", new Date(departureTime).toLocaleString("en-BD", {
                     weekday: "short", month: "short", day: "numeric",
                     hour: "2-digit", minute: "2-digit"
                   })],
-                  ["Seats available", totalSeats],
+                  ["Seats available",  totalSeats],
                 ].map(([label, value]) => (
                   <div key={label} className="px-6 py-4 flex items-center justify-between">
                     <span className="text-sm text-gray-500">{label}</span>
@@ -287,7 +304,9 @@ export default function PostCarpool() {
             </div>
 
             {error && (
-              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">{error}</div>
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
             )}
 
             <div className="flex gap-3">

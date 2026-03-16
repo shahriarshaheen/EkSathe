@@ -4,7 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import PostCarpool from "./pages/PostCarpool";
 import BrowseCarpool from "./pages/BrowseCarpool";
-
+import MyRides from "./pages/MyRides";
 // Parking
 import CreateListingPage from "./features/parking/pages/CreateListingPage";
 import MyListingsPage from "./features/parking/pages/MyListingsPage";
@@ -177,6 +177,15 @@ const App = () => {
                 <BookSpotPage />
               </ProtectedRoute>
             }
+          />
+
+          <Route
+            path="/dashboard/carpool/my-rides"
+            element={
+              <ProtectedRoute>
+                 <MyRides />
+              </ProtectedRoute>
+            } 
           />
 
           {/* Payment */}

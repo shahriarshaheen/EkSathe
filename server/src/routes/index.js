@@ -7,6 +7,7 @@ import paymentRoutes from "./paymentRoutes.js";
 import sosRoutes from "./sosRoutes.js";
 import userRoutes from "./userRoutes.js";
 import adminRoutes from "./adminRoutes.js";
+import carpoolRoutes from "./carpoolRouter.js";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use("/payment", paymentRoutes);
 router.use("/sos", sosRoutes);
 router.use("/user", userRoutes);
 router.use("/admin", adminRoutes);
+router.use("/carpool", carpoolRoutes);
 
 export default router;
