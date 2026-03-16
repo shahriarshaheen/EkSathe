@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import PostCarpool from "./pages/PostCarpool";
+import BrowseCarpool from "./pages/BrowseCarpool";
 
 // Parking
 import CreateListingPage from "./features/parking/pages/CreateListingPage";
@@ -40,6 +42,7 @@ import BookSpotPage from "./features/bookings/pages/BookSpotPage";
 import PaymentSuccessPage from "./features/payment/pages/PaymentSuccessPage";
 import PaymentFailPage from "./features/payment/pages/PaymentFailPage";
 import PaymentCancelPage from "./features/payment/pages/PaymentCancelPage";
+
 
 const App = () => {
   return (
@@ -180,7 +183,25 @@ const App = () => {
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/fail" element={<PaymentFailPage />} />
           <Route path="/payment/cancel" element={<PaymentCancelPage />} />
+          {/* Carpool */}
 
+        <Route
+          path="/dashboard/carpool"
+          element={
+            <ProtectedRoute>
+              <BrowseCarpool />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/carpool/post"
+          element={
+            <ProtectedRoute>
+              <PostCarpool />
+            </ProtectedRoute>
+          }
+        />
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
