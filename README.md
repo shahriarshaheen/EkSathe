@@ -8,33 +8,33 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 
 ## Project Status
 
-| Module                              | Status                  |
-| ----------------------------------- | ----------------------- |
-| Authentication System               | ✅ Complete             |
-| Role-based Dashboards               | ✅ Complete             |
-| University Email Restriction        | ✅ Complete             |
-| Student ID Verification (Admin)     | ✅ Complete             |
-| Profile Photo & Edit Page           | ✅ Complete             |
-| Parking Spot Listing (F-01)         | ✅ Complete             |
-| Interactive Map View (F-02)         | ✅ Complete             |
-| Booking Calendar System (F-03)      | ✅ Complete             |
-| SSLCommerz Payment (F-04)           | ✅ Complete             |
-| Homeowner Earnings Dashboard (F-05) | ✅ Complete             |
-| Post Carpool Route (F-06)           | ✅ Complete             |
-| Pre-set University Routes (F-07)    | ✅ Complete             |
-| Gender-Safe Carpool Filter (F-08)   | ✅ Complete             |
-| Cost Splitting Calculator (F-09)    | ✅ Complete             |
-| Post-Ride Rating System (F-10)      | 🔲 Sprint 2 — Remaining |
-| SOS Panic Button (F-11)             | ✅ Complete             |
-| Live Trip Sharing (F-12)            | 🔲 Sprint 3             |
-| Route Deviation Alert (F-13)        | 🔲 Sprint 3             |
-| Anonymous Incident Reporting (F-14) | ✅ Complete             |
-| Admin Moderation Dashboard (F-15)   | ✅ Complete             |
-| Smart Demand Indicator (F-16)       | 🔲 Sprint 4             |
-| Dynamic Pricing Nudge (F-17)        | 🔲 Sprint 4             |
-| Firebase Push Notifications (F-18)  | 🔲 Sprint 4             |
-| Advanced Search & Filter (F-19)     | 🔲 Sprint 4             |
-| Trust Score & Badge System (F-20)   | 🔲 Sprint 4             |
+| Module                                     | Status                  |
+| ------------------------------------------ | ----------------------- |
+| Authentication System                      | ✅ Complete             |
+| Role-based Dashboards                      | ✅ Complete             |
+| University Email Restriction               | ✅ Complete             |
+| Student ID Verification (Admin)            | ✅ Complete             |
+| Profile Photo & Edit Page                  | ✅ Complete             |
+| Parking Spot Listing (F-01)                | ✅ Complete             |
+| Interactive Map View (F-02)                | ✅ Complete             |
+| Booking Calendar System (F-03)             | ✅ Complete             |
+| SSLCommerz Payment (F-04)                  | ✅ Complete             |
+| Homeowner Earnings Dashboard (F-05)        | ✅ Complete             |
+| Post Carpool Route + Map Picker (F-06)     | ✅ Complete             |
+| Ride Discovery & Smart Browse (F-07)       | ✅ Complete             |
+| Trust & Rating System (F-08)               | ✅ Complete             |
+| In-Ride Communication / Noticeboard (F-09) | 🔲 Sprint 2 — Remaining |
+| Rider Trust Profile (F-10)                 | 🔲 Sprint 2 — Remaining |
+| SOS Panic Button (F-11)                    | ✅ Complete             |
+| Live Trip Sharing (F-12)                   | 🔲 Sprint 3             |
+| Route Deviation Alert (F-13)               | 🔲 Sprint 3             |
+| Anonymous Incident Reporting (F-14)        | ✅ Complete             |
+| Admin Moderation Dashboard (F-15)          | ✅ Complete             |
+| Smart Demand Indicator (F-16)              | 🔲 Sprint 4             |
+| Dynamic Pricing Nudge (F-17)               | 🔲 Sprint 4             |
+| Firebase Push Notifications (F-18)         | 🔲 Sprint 4             |
+| Advanced Search & Filter (F-19)            | 🔲 Sprint 4             |
+| Trust Score & Badge System (F-20)          | 🔲 Sprint 4             |
 
 ---
 
@@ -142,9 +142,9 @@ EkSathe/
 ### Booking Calendar System (F-03)
 
 - Date/time selection with conflict checking
-- My Bookings page
+- My Bookings page with cancel and rate homeowner
 
-**Endpoints:** `POST /api/bookings`, `GET /api/bookings/my`
+**Endpoints:** `POST /api/bookings`, `GET /api/bookings/my`, `PATCH /api/bookings/:id/cancel`
 
 ---
 
@@ -160,27 +160,21 @@ EkSathe/
 ### Homeowner Earnings Dashboard (F-05)
 
 - Monthly earnings chart (Recharts)
-- Listing performance table
+- Listing performance table with hover effects
 
 ---
 
-### Carpool System (F-06, F-07, F-08, F-09)
+### Post Carpool Route + Map Picker (F-06)
 
 Full carpool platform with map-based route pinning:
 
-- **Post a ride** — 3-step wizard with Leaflet map picker
-  - Step 1: Select university preset route OR pin custom pickup/dropoff on map
-  - Nominatim reverse geocoding — tap gives real address automatically
-  - Step 2: Set departure time, seats, price, gender-safe toggle, notes
-  - Step 3: Review with map preview before posting
-- **Browse rides** — filter by university route, gender-safe toggle, custom search
-- **Join a ride** — double booking check (blocks joining two rides within 2 hours)
-- **Leave a ride** — passenger can leave any active ride
-- **Cancel a ride** — driver cancels own ride
-- **My Rides page** — active/past tabs, posted + joined rides, expandable map per ride, passenger list for drivers
-- **Gender-safe filter** — female-only rides visible only to female students
-- **Price suggestion** — auto-calculated from km distance
-- **Preset routes** — 40 routes across 10 universities in Dhaka
+- 3-step wizard — pick route, trip details, confirm
+- Step 1: Select from 40 preset university routes across 10 Dhaka universities OR pin exact pickup/dropoff on Leaflet map
+- Nominatim reverse geocoding — tapping map auto-resolves to real street address
+- Preset route shows preview map with both markers and dashed route line
+- Step 2: Departure time, seats (1–6), price per seat, gender-safe toggle, notes
+- Step 3: Review with map showing full route before posting
+- Double booking prevention — blocks joining two rides within 2 hours
 
 **Endpoints:**
 
@@ -194,6 +188,50 @@ PATCH  /api/carpool/routes/:id/cancel
 GET    /api/carpool/my
 GET    /api/carpool/admin/routes          (admin)
 PATCH  /api/carpool/admin/routes/:id/cancel (admin)
+```
+
+---
+
+### Ride Discovery & Smart Browse (F-07)
+
+- Browse all open future carpool rides
+- University filter pills — narrow by institution
+- Gender-safe toggle — show female-only rides
+- Custom search by area or destination
+- My Rides page — active/past tabs for posted and joined rides
+- Expandable map on each ride card showing exact route
+- Driver sees full passenger list with photos and trust scores
+- Passenger sees driver info with trust score
+- Cancel ride (driver) and Leave ride (passenger) buttons
+- Unread message badge placeholder for future noticeboard
+
+---
+
+### Trust & Rating System (F-08)
+
+Peer accountability system for both carpool and parking:
+
+- **Carpool ratings** — after departure time passes, Rate button appears on past rides
+  - Passenger rates driver (1–5 stars + comment)
+  - Driver rates each passenger individually
+- **Parking ratings** — after confirmed booking end time passes, Rate Spot button appears
+  - Student rates homeowner (1–5 stars + comment)
+- Quick comment chips per context — e.g. "Great driver!", "Punctual", "Left spot clean"
+- Custom text comment field
+- Trust score updates automatically on submission — 5★ = +3, 4★ = +2, 3★ = +1, 2★ = -1, 1★ = -3
+- Duplicate prevention — one rating per person per ride/booking
+- Already-rated notice shown on rated cards
+- My Ratings page — view all ratings received with star breakdown chart, and all ratings given
+- Filter by Carpool or Parking context
+
+**Endpoints:**
+
+```
+POST   /api/ratings
+GET    /api/ratings/received
+GET    /api/ratings/given
+GET    /api/ratings/check
+GET    /api/ratings/user/:id    (public)
 ```
 
 ---
@@ -221,9 +259,9 @@ PATCH  /api/carpool/admin/routes/:id/cancel (admin)
 ### Admin Moderation Dashboard (F-15)
 
 - Real-time stats: users, students, pending verifications, active carpools
-- Student ID verification panel with approve/reject
+- Student ID verification panel with approve/reject and email notifications
 - Carpool moderation panel — view all rides, force cancel, filter by status, search by driver
-- System status panel
+- System status panel showing all modules
 
 ---
 
@@ -266,7 +304,7 @@ cd client && npm install && npm run dev
 | Sprint | Theme               | Status                             |
 | ------ | ------------------- | ---------------------------------- |
 | S1     | Parking Marketplace | ✅ Complete                        |
-| S2     | Carpooling Network  | ✅ Complete                        |
+| S2     | Carpooling Network  | 🔲 In Progress (3/5 done)          |
 | S3     | Safety & Trust      | 🔲 Partial (F-11, F-14, F-15 done) |
 | S4     | Smart Features      | 🔲 Pending                         |
 
@@ -306,4 +344,4 @@ git push origin feature/feature-name
 ## Contributors
 
 EkSathe Development Team
-University Software Engineering Project — Dhaka, Bangladesh
+BRAC University Software Engineering Course Project

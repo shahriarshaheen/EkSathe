@@ -5,20 +5,21 @@ import Booking from "../models/Booking.js";
 export const createBooking = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ success: false, message: errors.array()[0].msg });
+    return res
+      .status(400)
+      .json({ success: false, message: errors.array()[0].msg });
   }
 
   try {
-    const { spotId, homeownerId, date, startTime, endTime, totalPrice } = req.body;
+    const { spotId, homeownerId, date, startTime, endTime, totalPrice } =
+      req.body;
 
     // Conflict check — same spot, same date, overlapping time
     const conflict = await Booking.findOne({
       spotId,
       date,
       status: { $ne: "cancelled" },
-      $or: [
-        { startTime: { $lt: endTime }, endTime: { $gt: startTime } },
-      ],
+      $or: [{ startTime: { $lt: endTime }, endTime: { $gt: startTime } }],
     });
 
     if (conflict) {
@@ -46,12 +47,21 @@ export const createBooking = async (req, res) => {
 };
 
 // GET /api/bookings/my — student sees their own bookings
+// Populates homeownerId so the frontend can show Rate button
 export const getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ studentId: req.user.id })
+      .populate("homeownerId", "name photoUrl trustScore")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ success: true, data: bookings });
+    // Reshape so frontend gets booking.homeowner instead of booking.homeownerId
+    const shaped = bookings.map((b) => {
+      const obj = b.toObject();
+      obj.homeowner = obj.homeownerId;
+      return obj;
+    });
+
+    return res.status(200).json({ success: true, data: shaped });
   } catch (err) {
     console.error("getMyBookings error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
@@ -77,27 +87,37 @@ export const getSpotBookings = async (req, res) => {
 export const cancelBooking = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ success: false, message: errors.array()[0].msg });
+    return res
+      .status(400)
+      .json({ success: false, message: errors.array()[0].msg });
   }
 
   try {
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
     }
 
-    // Only the student who made it, the homeowner, or admin can cancel
     const isStudent = booking.studentId.toString() === req.user.id;
     const isHomeowner = booking.homeownerId.toString() === req.user.id;
     const isAdmin = req.user.role === "admin";
 
     if (!isStudent && !isHomeowner && !isAdmin) {
-      return res.status(403).json({ success: false, message: "Not authorized to cancel this booking" });
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "Not authorized to cancel this booking",
+        });
     }
 
     if (booking.status === "cancelled") {
-      return res.status(400).json({ success: false, message: "Booking is already cancelled" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Booking is already cancelled" });
     }
 
     booking.status = "cancelled";
@@ -115,9 +135,17 @@ export const cancelBooking = async (req, res) => {
 export const getHomeownerBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ homeownerId: req.user.id })
+      .populate("studentId", "name photoUrl trustScore")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ success: true, data: bookings });
+    // Reshape so frontend gets booking.student
+    const shaped = bookings.map((b) => {
+      const obj = b.toObject();
+      obj.student = obj.studentId;
+      return obj;
+    });
+
+    return res.status(200).json({ success: true, data: shaped });
   } catch (err) {
     console.error("getHomeownerBookings error:", err);
     return res.status(500).json({ success: false, message: "Server error" });

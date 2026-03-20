@@ -8,6 +8,7 @@ import sosRoutes from "./sosRoutes.js";
 import userRoutes from "./userRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import carpoolRoutes from "./carpoolRouter.js";
+import ratingRoutes from "./ratingRoutes.js";
 
 const router = Router();
 
@@ -24,5 +25,5 @@ router.use("/sos", sosRoutes);
 router.use("/user", userRoutes);
 router.use("/admin", adminRoutes);
 router.use("/carpool", carpoolRoutes);
-
+router.use("/ratings", ratingRoutes);
 export default router;

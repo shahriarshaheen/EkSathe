@@ -7,15 +7,16 @@ import {
   Home,
   Shield,
   Bell,
-  ArrowLeft,
   Plus,
   Clock,
   Users,
   ChevronDown,
   ChevronUp,
+  Star,
 } from "lucide-react";
 import DashboardLayout from "../components/ui/DashboardLayout";
 import CarpoolMapPicker from "../components/CarpoolMapPicker";
+import RatingModal from "../components/RatingModal";
 import api from "../lib/api";
 
 const TAKA = "\u09F3";
@@ -41,6 +42,13 @@ const statusStyle = {
   completed: "bg-stone-100 border-stone-200 text-stone-500",
 };
 
+// Ride is rateable if departure time is past and not cancelled
+const isRateable = (ride) =>
+  new Date(ride.departureTime) < new Date() && ride.status !== "cancelled";
+
+// Key for tracking per-user ratings: rideId_userId
+const ratedKey = (rideId, userId) => `${rideId}_${userId}`;
+
 const RideCard = ({
   ride,
   isDriver,
@@ -48,250 +56,326 @@ const RideCard = ({
   onLeave,
   cancelling,
   leaving,
+  ratedKeys,
+  onRated,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [ratingTarget, setRatingTarget] = useState(null);
   const departure = new Date(ride.departureTime);
   const isPast = departure < new Date();
+  const rateable = isRateable(ride);
+
+  // Check if a specific user has been rated for this ride
+  const hasRated = (userId) =>
+    ratedKeys.has(ratedKey(ride._id, userId?.toString()));
+
+  // Check if ALL rateable people have been rated
+  const allRated =
+    rateable &&
+    (() => {
+      if (!isDriver && ride.driver) return hasRated(ride.driver._id);
+      if (isDriver && ride.passengers?.length > 0) {
+        return ride.passengers.every((p) => hasRated(p._id));
+      }
+      return false;
+    })();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-md transition-shadow"
-    >
-      {/* Color bar */}
-      <div
-        className={`h-1 w-full ${
-          ride.status === "cancelled"
-            ? "bg-red-400"
-            : ride.status === "full"
-              ? "bg-orange-400"
-              : ride.status === "completed"
-                ? "bg-stone-300"
-                : "bg-gradient-to-r from-teal-400 to-teal-500"
-        }`}
-      />
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-2xl border border-stone-200 overflow-hidden hover:shadow-md transition-shadow"
+      >
+        <div
+          className={`h-1 w-full ${
+            ride.status === "cancelled"
+              ? "bg-red-400"
+              : ride.status === "full"
+                ? "bg-orange-400"
+                : ride.status === "completed"
+                  ? "bg-stone-300"
+                  : "bg-gradient-to-r from-teal-400 to-teal-500"
+          }`}
+        />
 
-      <div className="p-5">
-        {/* Route + status */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-                <div className="w-2 h-2 rounded-full bg-teal-500" />
-                <div className="w-px h-3 bg-stone-200" />
-                <div className="w-2 h-2 rounded-full bg-rose-500" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-stone-900 truncate">
-                  {ride.origin.area} {ARROW} {ride.destination.area}
-                </p>
-                <p className="text-xs text-stone-400 truncate">
-                  {ride.origin.name} {ARROW} {ride.destination.name}
-                </p>
+        <div className="p-5">
+          {/* Route + status */}
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-teal-500" />
+                  <div className="w-px h-3 bg-stone-200" />
+                  <div className="w-2 h-2 rounded-full bg-rose-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-stone-900 truncate">
+                    {ride.origin.area} {ARROW} {ride.destination.area}
+                  </p>
+                  <p className="text-xs text-stone-400 truncate">
+                    {ride.origin.name} {ARROW} {ride.destination.name}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-            <span
-              className={`text-xs font-bold px-2.5 py-1 rounded-full border ${statusStyle[ride.status]}`}
-            >
-              {ride.status.charAt(0).toUpperCase() + ride.status.slice(1)}
-            </span>
-            {isDriver && (
-              <span className="text-xs bg-blue-50 border border-blue-200 text-blue-600 px-2 py-0.5 rounded-full font-semibold">
-                Driver
+            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+              <span
+                className={`text-xs font-bold px-2.5 py-1 rounded-full border ${statusStyle[ride.status]}`}
+              >
+                {ride.status.charAt(0).toUpperCase() + ride.status.slice(1)}
               </span>
-            )}
-            {!isDriver && (
-              <span className="text-xs bg-violet-50 border border-violet-200 text-violet-600 px-2 py-0.5 rounded-full font-semibold">
-                Passenger
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Info row */}
-        <div className="flex items-center gap-4 py-3 border-t border-b border-stone-50 mb-3">
-          <div className="flex items-center gap-1.5 text-xs text-stone-600">
-            <Clock className="w-3.5 h-3.5 text-stone-400" />
-            <span className="font-semibold">
-              {departure.toLocaleDateString("en-BD", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-            <span className="text-stone-400">
-              {departure.toLocaleTimeString("en-BD", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          </div>
-          <div className="w-px h-4 bg-stone-200" />
-          <div className="flex items-center gap-1.5 text-xs text-stone-600">
-            <Users className="w-3.5 h-3.5 text-stone-400" />
-            <span className="font-semibold">
-              {ride.availableSeats}/{ride.totalSeats} seats
-            </span>
-          </div>
-          <div className="w-px h-4 bg-stone-200" />
-          <span className="text-sm font-bold text-teal-600 ml-auto">
-            {TAKA}
-            {ride.pricePerSeat}/seat
-          </span>
-        </div>
-
-        {/* Driver info — only show if passenger */}
-        {!isDriver && ride.driver && (
-          <div className="flex items-center gap-2 mb-3 bg-stone-50 rounded-xl px-3 py-2">
-            <div className="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
-              {ride.driver.photoUrl ? (
-                <img
-                  src={ride.driver.photoUrl}
-                  className="w-full h-full rounded-full object-cover"
-                  alt={ride.driver.name}
-                />
+              {isDriver ? (
+                <span className="text-xs bg-blue-50 border border-blue-200 text-blue-600 px-2 py-0.5 rounded-full font-semibold">
+                  Driver
+                </span>
               ) : (
-                <span className="text-xs font-bold text-teal-600">
-                  {ride.driver.name?.[0]?.toUpperCase()}
+                <span className="text-xs bg-violet-50 border border-violet-200 text-violet-600 px-2 py-0.5 rounded-full font-semibold">
+                  Passenger
                 </span>
               )}
             </div>
-            <div>
-              <p className="text-xs font-semibold text-stone-700">
-                {ride.driver.name}
-              </p>
-              <p className="text-xs text-stone-400">
-                Driver · Trust score {ride.driver.trustScore}
-              </p>
-            </div>
           </div>
-        )}
 
-        {/* Passengers — only show if driver */}
-        {isDriver && ride.passengers?.length > 0 && (
-          <div className="mb-3 bg-stone-50 rounded-xl px-3 py-2">
-            <p className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">
-              Passengers ({ride.passengers.length})
-            </p>
-            <div className="flex flex-col gap-1.5">
-              {ride.passengers.map((p, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
-                    {p.photoUrl ? (
-                      <img
-                        src={p.photoUrl}
-                        className="w-full h-full rounded-full object-cover"
-                        alt={p.name}
-                      />
-                    ) : (
-                      <span className="text-xs font-bold text-teal-600">
-                        {p.name?.[0]?.toUpperCase() || "?"}
+          {/* Info row */}
+          <div className="flex items-center gap-4 py-3 border-t border-b border-stone-50 mb-3">
+            <div className="flex items-center gap-1.5 text-xs text-stone-600">
+              <Clock className="w-3.5 h-3.5 text-stone-400" />
+              <span className="font-semibold">
+                {departure.toLocaleDateString("en-BD", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+              <span className="text-stone-400">
+                {departure.toLocaleTimeString("en-BD", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+            <div className="w-px h-4 bg-stone-200" />
+            <div className="flex items-center gap-1.5 text-xs text-stone-600">
+              <Users className="w-3.5 h-3.5 text-stone-400" />
+              <span className="font-semibold">
+                {ride.availableSeats}/{ride.totalSeats} seats
+              </span>
+            </div>
+            <span className="text-sm font-bold text-teal-600 ml-auto">
+              {TAKA}
+              {ride.pricePerSeat}/seat
+            </span>
+          </div>
+
+          {/* Driver info — passenger view */}
+          {!isDriver && ride.driver && (
+            <div className="flex items-center gap-2 mb-3 bg-stone-50 rounded-xl px-3 py-2">
+              <div className="w-7 h-7 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {ride.driver.photoUrl ? (
+                  <img
+                    src={ride.driver.photoUrl}
+                    className="w-full h-full object-cover"
+                    alt={ride.driver.name}
+                  />
+                ) : (
+                  <span className="text-xs font-bold text-teal-600">
+                    {ride.driver.name?.[0]?.toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-stone-700">
+                  {ride.driver.name}
+                </p>
+                <p className="text-xs text-stone-400">
+                  Driver · Trust {ride.driver.trustScore}
+                </p>
+              </div>
+              {/* Rate driver — only if rateable and not yet rated */}
+              {rateable && !hasRated(ride.driver._id) && (
+                <button
+                  onClick={() =>
+                    setRatingTarget({ user: ride.driver, role: "driver" })
+                  }
+                  className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-xl hover:bg-amber-100 transition-colors flex-shrink-0"
+                >
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  Rate
+                </button>
+              )}
+              {rateable && hasRated(ride.driver._id) && (
+                <span className="text-xs text-teal-600 flex items-center gap-1 flex-shrink-0">
+                  <Star className="w-3 h-3 fill-teal-500 text-teal-500" />
+                  Rated
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Passengers — driver view */}
+          {isDriver && ride.passengers?.length > 0 && (
+            <div className="mb-3 bg-stone-50 rounded-xl px-3 py-2">
+              <p className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">
+                Passengers ({ride.passengers.length})
+              </p>
+              <div className="flex flex-col gap-2">
+                {ride.passengers.map((p, i) => (
+                  <div key={p._id || i} className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {p.photoUrl ? (
+                        <img
+                          src={p.photoUrl}
+                          className="w-full h-full object-cover"
+                          alt={p.name}
+                        />
+                      ) : (
+                        <span className="text-xs font-bold text-teal-600">
+                          {p.name?.[0]?.toUpperCase() || "?"}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-stone-700 flex-1">
+                      {p.name || "Anonymous"}
+                    </span>
+                    {p.trustScore != null && (
+                      <span className="text-xs text-amber-600 font-bold">
+                        ★ {p.trustScore}
+                      </span>
+                    )}
+                    {/* Rate each passenger independently */}
+                    {rateable && !hasRated(p._id) && (
+                      <button
+                        onClick={() =>
+                          setRatingTarget({ user: p, role: "passenger" })
+                        }
+                        className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-xl hover:bg-amber-100 transition-colors"
+                      >
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        Rate
+                      </button>
+                    )}
+                    {rateable && hasRated(p._id) && (
+                      <span className="text-xs text-teal-600 flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-teal-500 text-teal-500" />
+                        Rated
                       </span>
                     )}
                   </div>
-                  <span className="text-xs font-semibold text-stone-700">
-                    {p.name || "Anonymous"}
-                  </span>
-                  {p.trustScore != null && (
-                    <span className="ml-auto text-xs text-amber-600 font-bold">
-                      ★ {p.trustScore}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {isDriver &&
-          ride.passengers?.length === 0 &&
-          ride.status === "open" && (
-            <div className="mb-3 bg-stone-50 rounded-xl px-3 py-2">
-              <p className="text-xs text-stone-400 text-center py-1">
-                No passengers yet — share this ride with friends
-              </p>
+                ))}
+              </div>
             </div>
           )}
 
-        {/* Expand map button */}
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-stone-400 hover:text-teal-600 transition-colors py-1 mb-3"
-        >
-          <MapPin className="w-3.5 h-3.5" />
-          {expanded ? "Hide map" : "Show route on map"}
-          {expanded ? (
-            <ChevronUp className="w-3 h-3" />
-          ) : (
-            <ChevronDown className="w-3 h-3" />
-          )}
-        </button>
+          {isDriver &&
+            ride.passengers?.length === 0 &&
+            ride.status === "open" && (
+              <div className="mb-3 bg-stone-50 rounded-xl px-3 py-2">
+                <p className="text-xs text-stone-400 text-center py-1">
+                  No passengers yet — share this ride
+                </p>
+              </div>
+            )}
 
-        {/* Map */}
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden mb-3"
-            >
-              <CarpoolMapPicker
-                pickup={{
-                  name: ride.origin.name,
-                  area: ride.origin.area,
-                  lat: ride.origin.lat,
-                  lng: ride.origin.lng,
-                }}
-                dropoff={{
-                  name: ride.destination.name,
-                  area: ride.destination.area,
-                  lat: ride.destination.lat,
-                  lng: ride.destination.lng,
-                }}
-                onPickup={() => {}}
-                onDropoff={() => {}}
-                onReset={() => {}}
-                presetOrigin={ride.origin}
-                presetDestination={ride.destination}
-                readOnly
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Actions */}
-        {isDriver &&
-          !isPast &&
-          ride.status !== "cancelled" &&
-          ride.status !== "completed" && (
-            <button
-              onClick={() => onCancel(ride._id)}
-              disabled={cancelling === ride._id}
-              className="w-full py-2.5 rounded-xl bg-red-50 border border-red-200 text-sm font-bold text-red-500 hover:bg-red-100 transition-all disabled:opacity-50"
-            >
-              {cancelling === ride._id ? "Cancelling..." : "Cancel Ride"}
-            </button>
+          {/* All rated notice */}
+          {allRated && (
+            <div className="mb-3 flex items-center gap-1.5 text-xs text-teal-600 bg-teal-50 rounded-xl px-3 py-2">
+              <Star className="w-3.5 h-3.5 fill-teal-500 text-teal-500" />
+              All ratings submitted for this ride
+            </div>
           )}
 
-        {!isDriver &&
-          !isPast &&
-          ride.status !== "cancelled" &&
-          ride.status !== "completed" && (
-            <button
-              onClick={() => onLeave(ride._id)}
-              disabled={leaving === ride._id}
-              className="w-full py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm font-bold text-stone-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all disabled:opacity-50"
-            >
-              {leaving === ride._id ? "Leaving..." : "Leave Ride"}
-            </button>
-          )}
-      </div>
-    </motion.div>
+          {/* Map toggle */}
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-stone-400 hover:text-teal-600 transition-colors py-1 mb-3"
+          >
+            <MapPin className="w-3.5 h-3.5" />
+            {expanded ? "Hide map" : "Show route on map"}
+            {expanded ? (
+              <ChevronUp className="w-3 h-3" />
+            ) : (
+              <ChevronDown className="w-3 h-3" />
+            )}
+          </button>
+
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden mb-3"
+              >
+                <CarpoolMapPicker
+                  pickup={{
+                    name: ride.origin.name,
+                    area: ride.origin.area,
+                    lat: ride.origin.lat,
+                    lng: ride.origin.lng,
+                  }}
+                  dropoff={{
+                    name: ride.destination.name,
+                    area: ride.destination.area,
+                    lat: ride.destination.lat,
+                    lng: ride.destination.lng,
+                  }}
+                  onPickup={() => {}}
+                  onDropoff={() => {}}
+                  onReset={() => {}}
+                  presetOrigin={ride.origin}
+                  presetDestination={ride.destination}
+                  readOnly
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Action buttons */}
+          {isDriver &&
+            !isPast &&
+            ride.status !== "cancelled" &&
+            ride.status !== "completed" && (
+              <button
+                onClick={() => onCancel(ride._id)}
+                disabled={cancelling === ride._id}
+                className="w-full py-2.5 rounded-xl bg-red-50 border border-red-200 text-sm font-bold text-red-500 hover:bg-red-100 transition-all disabled:opacity-50"
+              >
+                {cancelling === ride._id ? "Cancelling..." : "Cancel Ride"}
+              </button>
+            )}
+
+          {!isDriver &&
+            !isPast &&
+            ride.status !== "cancelled" &&
+            ride.status !== "completed" && (
+              <button
+                onClick={() => onLeave(ride._id)}
+                disabled={leaving === ride._id}
+                className="w-full py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm font-bold text-stone-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition-all disabled:opacity-50"
+              >
+                {leaving === ride._id ? "Leaving..." : "Leave Ride"}
+              </button>
+            )}
+        </div>
+      </motion.div>
+
+      {/* Rating Modal */}
+      {ratingTarget && (
+        <RatingModal
+          ratedUser={ratingTarget.user}
+          contextType="carpool"
+          contextId={ride._id}
+          ratedRole={ratingTarget.role}
+          onClose={() => setRatingTarget(null)}
+          onSuccess={() => {
+            onRated(ride._id, ratingTarget.user._id);
+            setRatingTarget(null);
+          }}
+        />
+      )}
+    </>
   );
 };
 
@@ -300,18 +384,32 @@ export default function MyRides() {
   const [posted, setPosted] = useState([]);
   const [joined, setJoined] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("posted");
+  const [tab, setTab] = useState("active");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [cancelling, setCancelling] = useState(null);
   const [leaving, setLeaving] = useState(null);
+  // Track rated as rideId_userId combinations
+  const [ratedKeys, setRatedKeys] = useState(new Set());
 
   const fetchRides = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/carpool/my");
-      setPosted(res.data.data.posted || []);
-      setJoined(res.data.data.joined || []);
+      const [ridesRes, givenRes] = await Promise.all([
+        api.get("/carpool/my"),
+        api.get("/ratings/given"),
+      ]);
+      setPosted(ridesRes.data.data.posted || []);
+      setJoined(ridesRes.data.data.joined || []);
+
+      // Build set of rideId_ratedUserId keys
+      const keys = new Set(
+        givenRes.data.data.map(
+          (r) =>
+            `${r.contextId?.toString()}_${r.rated?.toString?.() || r.rated}`,
+        ),
+      );
+      setRatedKeys(keys);
     } catch {
       setError("Could not load your rides.");
     } finally {
@@ -323,9 +421,14 @@ export default function MyRides() {
     fetchRides();
   }, []);
 
+  const handleRated = (rideId, userId) => {
+    setRatedKeys((prev) => new Set([...prev, ratedKey(rideId, userId)]));
+    setSuccess("Rating submitted!");
+    setTimeout(() => setSuccess(""), 4000);
+  };
+
   const handleCancel = async (id) => {
-    if (!window.confirm("Cancel this ride? All passengers will be notified."))
-      return;
+    if (!window.confirm("Cancel this ride?")) return;
     setCancelling(id);
     try {
       await api.patch(`/carpool/routes/${id}/cancel`);
@@ -354,8 +457,11 @@ export default function MyRides() {
     }
   };
 
+  // Fix: a ride is active only if status is open/full AND departure is in the future
   const activePosted = posted.filter(
-    (r) => r.status === "open" || r.status === "full",
+    (r) =>
+      (r.status === "open" || r.status === "full") &&
+      new Date(r.departureTime) >= new Date(),
   );
   const pastPosted = posted.filter(
     (r) =>
@@ -364,7 +470,9 @@ export default function MyRides() {
       new Date(r.departureTime) < new Date(),
   );
   const activeJoined = joined.filter(
-    (r) => r.status === "open" || r.status === "full",
+    (r) =>
+      (r.status === "open" || r.status === "full") &&
+      new Date(r.departureTime) >= new Date(),
   );
   const pastJoined = joined.filter(
     (r) =>
@@ -373,14 +481,13 @@ export default function MyRides() {
       new Date(r.departureTime) < new Date(),
   );
 
-  const currentPosted = tab === "posted" ? activePosted : pastPosted;
-  const currentJoined = tab === "posted" ? activeJoined : pastJoined;
+  const currentPosted = tab === "active" ? activePosted : pastPosted;
+  const currentJoined = tab === "active" ? activeJoined : pastJoined;
 
   return (
     <DashboardLayout navItems={navItems}>
       <div className="min-h-screen dashboard-bg">
         <div className="max-w-2xl mx-auto px-4 py-8">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -436,24 +543,26 @@ export default function MyRides() {
             ))}
           </motion.div>
 
-          {/* Active / Past tabs */}
+          {/* Tabs */}
           <div className="flex gap-1 bg-stone-100 p-1 rounded-xl mb-5">
-            {["posted", "past"].map((t) => (
+            {[
+              ["active", "Active"],
+              ["past", "Past"],
+            ].map(([t, label]) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`flex-1 py-2 text-sm font-bold rounded-lg capitalize transition-all ${
+                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
                   tab === t
                     ? "bg-white text-stone-900 shadow-sm"
                     : "text-stone-400 hover:text-stone-600"
                 }`}
               >
-                {t === "posted" ? "Active" : "Past"}
+                {label}
               </button>
             ))}
           </div>
 
-          {/* Alerts */}
           {success && (
             <div className="rounded-2xl bg-teal-50 border border-teal-200 px-4 py-3 text-sm text-teal-700 mb-4 flex items-center gap-2">
               <div className="w-5 h-5 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0">
@@ -486,7 +595,6 @@ export default function MyRides() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Posted by me */}
               <div>
                 <h2 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />
@@ -496,14 +604,14 @@ export default function MyRides() {
                   <div className="bg-white rounded-2xl border border-stone-200 p-8 text-center">
                     <Car className="w-8 h-8 text-stone-200 mx-auto mb-3" />
                     <p className="text-sm font-semibold text-stone-500 mb-1">
-                      {tab === "posted"
+                      {tab === "active"
                         ? "No active rides posted"
                         : "No past rides"}
                     </p>
-                    {tab === "posted" && (
+                    {tab === "active" && (
                       <button
                         onClick={() => navigate("/dashboard/carpool/post")}
-                        className="mt-3 text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors"
+                        className="mt-3 text-xs font-bold text-teal-600"
                       >
                         Post a ride →
                       </button>
@@ -520,13 +628,14 @@ export default function MyRides() {
                         onLeave={handleLeave}
                         cancelling={cancelling}
                         leaving={leaving}
+                        ratedKeys={ratedKeys}
+                        onRated={handleRated}
                       />
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Joined rides */}
               <div>
                 <h2 className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-violet-400 inline-block" />
@@ -536,14 +645,14 @@ export default function MyRides() {
                   <div className="bg-white rounded-2xl border border-stone-200 p-8 text-center">
                     <Users className="w-8 h-8 text-stone-200 mx-auto mb-3" />
                     <p className="text-sm font-semibold text-stone-500 mb-1">
-                      {tab === "posted"
-                        ? "You haven't joined any rides yet"
+                      {tab === "active"
+                        ? "No active joined rides"
                         : "No past joined rides"}
                     </p>
-                    {tab === "posted" && (
+                    {tab === "active" && (
                       <button
                         onClick={() => navigate("/dashboard/carpool")}
-                        className="mt-3 text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors"
+                        className="mt-3 text-xs font-bold text-teal-600"
                       >
                         Browse rides →
                       </button>
@@ -560,6 +669,8 @@ export default function MyRides() {
                         onLeave={handleLeave}
                         cancelling={cancelling}
                         leaving={leaving}
+                        ratedKeys={ratedKeys}
+                        onRated={handleRated}
                       />
                     ))}
                   </div>

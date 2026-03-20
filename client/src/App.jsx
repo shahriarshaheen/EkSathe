@@ -2,9 +2,13 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+
+// Carpool
 import PostCarpool from "./pages/PostCarpool";
 import BrowseCarpool from "./pages/BrowseCarpool";
 import MyRides from "./pages/MyRides";
+import MyRatingsPage from "./pages/MyRatingsPage";
+
 // Parking
 import CreateListingPage from "./features/parking/pages/CreateListingPage";
 import MyListingsPage from "./features/parking/pages/MyListingsPage";
@@ -20,6 +24,7 @@ import ProfilePage from "./features/profile/pages/ProfilePage";
 // Admin
 import VerificationsPage from "./features/admin/pages/VerificationsPage";
 import AdminCarpoolPage from "./pages/AdminCarpoolPage";
+
 // Auth pages
 import RegisterPage from "./features/auth/pages/RegisterPage";
 import VerifyEmailPage from "./features/auth/pages/VerifyEmailPage";
@@ -132,6 +137,16 @@ const App = () => {
             }
           />
 
+          {/* Ratings */}
+          <Route
+            path="/dashboard/ratings"
+            element={
+              <ProtectedRoute>
+                <MyRatingsPage />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Admin */}
           <Route
             path="/dashboard/verifications"
@@ -186,21 +201,7 @@ const App = () => {
             }
           />
 
-          <Route
-            path="/dashboard/carpool/my-rides"
-            element={
-              <ProtectedRoute>
-                <MyRides />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Payment */}
-          <Route path="/payment/success" element={<PaymentSuccessPage />} />
-          <Route path="/payment/fail" element={<PaymentFailPage />} />
-          <Route path="/payment/cancel" element={<PaymentCancelPage />} />
           {/* Carpool */}
-
           <Route
             path="/dashboard/carpool"
             element={
@@ -209,7 +210,6 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/dashboard/carpool/post"
             element={
@@ -226,6 +226,12 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* Payment */}
+          <Route path="/payment/success" element={<PaymentSuccessPage />} />
+          <Route path="/payment/fail" element={<PaymentFailPage />} />
+          <Route path="/payment/cancel" element={<PaymentCancelPage />} />
+
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 

@@ -1,15 +1,26 @@
 import CarpoolRoute from "../models/CarpoolRoute.js";
 import UNIVERSITY_ROUTES from "../config/universityRoutes.js";
 
+// Auto-complete rides that are past their departure time
+const autoCompleteExpiredRides = async () => {
+  await CarpoolRoute.updateMany(
+    {
+      status: { $in: ["open", "full"] },
+      departureTime: { $lt: new Date() },
+    },
+    { $set: { status: "completed" } },
+  );
+};
+
 // GET /api/carpool/presets
 export const getPresetRoutes = (req, res) => {
   res.json({ success: true, data: UNIVERSITY_ROUTES });
 };
 
-// GET /api/carpool/routes  — public browse, future rides only
+// GET /api/carpool/routes
 export const getRoutes = async (req, res) => {
   try {
-    const { genderSafe, presetRouteId, date } = req.query;
+    const { genderSafe, presetRouteId } = req.query;
 
     const filter = {
       status: "open",
@@ -18,13 +29,6 @@ export const getRoutes = async (req, res) => {
 
     if (genderSafe === "true") filter.genderSafe = true;
     if (presetRouteId) filter.presetRouteId = presetRouteId;
-    if (date) {
-      const start = new Date(date);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(date);
-      end.setHours(23, 59, 59, 999);
-      filter.departureTime = { $gte: start, $lte: end };
-    }
 
     const routes = await CarpoolRoute.find(filter)
       .populate("driver", "name trustScore photoUrl")
@@ -95,36 +99,32 @@ export const createRoute = async (req, res) => {
 export const joinRoute = async (req, res) => {
   try {
     const route = await CarpoolRoute.findById(req.params.id);
-    if (!route) {
+    if (!route)
       return res
         .status(404)
         .json({ success: false, message: "Route not found." });
-    }
-    if (route.status !== "open") {
+    if (route.status !== "open")
       return res
         .status(400)
         .json({ success: false, message: "This ride is no longer open." });
-    }
-    if (route.driver.toString() === req.user.id.toString()) {
+    if (route.driver.toString() === req.user.id.toString())
       return res
         .status(400)
         .json({ success: false, message: "You cannot join your own ride." });
-    }
+
     const alreadyJoined = route.passengers.some(
       (p) => p.toString() === req.user.id.toString(),
     );
-    if (alreadyJoined) {
+    if (alreadyJoined)
       return res
         .status(400)
         .json({ success: false, message: "You already joined this ride." });
-    }
-    if (route.availableSeats < 1) {
+    if (route.availableSeats < 1)
       return res
         .status(400)
         .json({ success: false, message: "No seats available." });
-    }
 
-    // Double booking check — block if user has another active ride within 2 hours
+    // Double booking — only check against future rides
     const deptTime = new Date(route.departureTime);
     const windowStart = new Date(deptTime.getTime() - 2 * 60 * 60 * 1000);
     const windowEnd = new Date(deptTime.getTime() + 2 * 60 * 60 * 1000);
@@ -132,7 +132,7 @@ export const joinRoute = async (req, res) => {
     const conflictingRide = await CarpoolRoute.findOne({
       $or: [{ driver: req.user.id }, { passengers: req.user.id }],
       status: { $in: ["open", "full"] },
-      departureTime: { $gte: windowStart, $lte: windowEnd },
+      departureTime: { $gte: new Date(), $gte: windowStart, $lte: windowEnd },
       _id: { $ne: route._id },
     });
 
@@ -142,7 +142,7 @@ export const joinRoute = async (req, res) => {
       ).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
       return res.status(400).json({
         success: false,
-        message: `You already have a ride at ${conflictTime}. Please leave that ride first before joining another.`,
+        message: `You already have a ride at ${conflictTime}. Please leave that ride first.`,
       });
     }
 
@@ -165,27 +165,29 @@ export const joinRoute = async (req, res) => {
 export const leaveRoute = async (req, res) => {
   try {
     const route = await CarpoolRoute.findById(req.params.id);
-    if (!route) {
+    if (!route)
       return res
         .status(404)
         .json({ success: false, message: "Route not found." });
-    }
-    if (route.status === "cancelled") {
+    if (route.status === "cancelled")
       return res
         .status(400)
         .json({ success: false, message: "Cannot leave a cancelled ride." });
-    }
+    if (route.status === "completed")
+      return res
+        .status(400)
+        .json({ success: false, message: "Cannot leave a completed ride." });
+
     const index = route.passengers.findIndex(
       (p) => p.toString() === req.user.id.toString(),
     );
-    if (index === -1) {
+    if (index === -1)
       return res
         .status(400)
         .json({
           success: false,
           message: "You are not a passenger on this ride.",
         });
-    }
 
     route.passengers.splice(index, 1);
     route.availableSeats += 1;
@@ -201,12 +203,16 @@ export const leaveRoute = async (req, res) => {
 // GET /api/carpool/my
 export const getMyRides = async (req, res) => {
   try {
+    // Auto-complete expired rides before fetching
+    await autoCompleteExpiredRides();
+
     const [posted, joined] = await Promise.all([
       CarpoolRoute.find({ driver: req.user.id })
         .populate("passengers", "name trustScore photoUrl")
         .sort({ departureTime: -1 }),
       CarpoolRoute.find({ passengers: req.user.id })
         .populate("driver", "name trustScore photoUrl")
+        .populate("passengers", "name trustScore photoUrl")
         .sort({ departureTime: -1 }),
     ]);
     res.json({ success: true, data: { posted, joined } });
@@ -215,33 +221,29 @@ export const getMyRides = async (req, res) => {
   }
 };
 
-// PATCH /api/carpool/routes/:id/cancel  — driver cancels own ride
+// PATCH /api/carpool/routes/:id/cancel
 export const cancelRoute = async (req, res) => {
   try {
     const route = await CarpoolRoute.findById(req.params.id);
-    if (!route) {
+    if (!route)
       return res
         .status(404)
         .json({ success: false, message: "Route not found." });
-    }
-    if (route.driver.toString() !== req.user.id.toString()) {
+    if (route.driver.toString() !== req.user.id.toString())
       return res
         .status(403)
         .json({
           success: false,
           message: "Only the driver can cancel this ride.",
         });
-    }
-    if (route.status === "cancelled") {
+    if (route.status === "cancelled")
       return res
         .status(400)
         .json({ success: false, message: "Ride is already cancelled." });
-    }
-    if (route.status === "completed") {
+    if (route.status === "completed")
       return res
         .status(400)
         .json({ success: false, message: "Cannot cancel a completed ride." });
-    }
 
     route.status = "cancelled";
     await route.save();
@@ -252,9 +254,10 @@ export const cancelRoute = async (req, res) => {
   }
 };
 
-// GET /api/carpool/admin/routes  — admin sees all rides
+// GET /api/carpool/admin/routes
 export const adminGetAllRoutes = async (req, res) => {
   try {
+    await autoCompleteExpiredRides();
     const { status } = req.query;
     const filter = {};
     if (status && status !== "all") filter.status = status;
@@ -270,20 +273,18 @@ export const adminGetAllRoutes = async (req, res) => {
   }
 };
 
-// PATCH /api/carpool/admin/routes/:id/cancel  — admin force cancels any ride
+// PATCH /api/carpool/admin/routes/:id/cancel
 export const adminCancelRoute = async (req, res) => {
   try {
     const route = await CarpoolRoute.findById(req.params.id);
-    if (!route) {
+    if (!route)
       return res
         .status(404)
         .json({ success: false, message: "Route not found." });
-    }
-    if (route.status === "cancelled") {
+    if (route.status === "cancelled")
       return res
         .status(400)
         .json({ success: false, message: "Ride is already cancelled." });
-    }
 
     route.status = "cancelled";
     await route.save();
