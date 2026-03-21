@@ -13,10 +13,12 @@ import {
   ChevronDown,
   ChevronUp,
   Star,
+  MessageCircle,
 } from "lucide-react";
 import DashboardLayout from "../components/ui/DashboardLayout";
 import CarpoolMapPicker from "../components/CarpoolMapPicker";
 import RatingModal from "../components/RatingModal";
+import ChatModal from "../components/ChatModal";
 import api from "../lib/api";
 
 const TAKA = "\u09F3";
@@ -42,11 +44,9 @@ const statusStyle = {
   completed: "bg-stone-100 border-stone-200 text-stone-500",
 };
 
-// Ride is rateable if departure time is past and not cancelled
 const isRateable = (ride) =>
   new Date(ride.departureTime) < new Date() && ride.status !== "cancelled";
 
-// Key for tracking per-user ratings: rideId_userId
 const ratedKey = (rideId, userId) => `${rideId}_${userId}`;
 
 const RideCard = ({
@@ -58,27 +58,36 @@ const RideCard = ({
   leaving,
   ratedKeys,
   onRated,
+  unreadCount,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [ratingTarget, setRatingTarget] = useState(null);
+  const [chatOpen, setChatOpen] = useState(false);
   const departure = new Date(ride.departureTime);
   const isPast = departure < new Date();
   const rateable = isRateable(ride);
 
-  // Check if a specific user has been rated for this ride
   const hasRated = (userId) =>
     ratedKeys.has(ratedKey(ride._id, userId?.toString()));
-
-  // Check if ALL rateable people have been rated
   const allRated =
     rateable &&
     (() => {
       if (!isDriver && ride.driver) return hasRated(ride.driver._id);
-      if (isDriver && ride.passengers?.length > 0) {
+      if (isDriver && ride.passengers?.length > 0)
         return ride.passengers.every((p) => hasRated(p._id));
-      }
       return false;
     })();
+
+  // Build participants list for chat header
+  const participants = isDriver
+    ? ride.passengers?.map((p) => ({ name: p.name, photoUrl: p.photoUrl })) ||
+      []
+    : [{ name: ride.driver?.name, photoUrl: ride.driver?.photoUrl }];
+
+  const chatTitle = `${ride.origin.area} ${ARROW} ${ride.destination.area}`;
+
+  // Chat only available for active/joined rides (not cancelled)
+  const canChat = ride.status !== "cancelled";
 
   return (
     <>
@@ -192,7 +201,6 @@ const RideCard = ({
                   Driver · Trust {ride.driver.trustScore}
                 </p>
               </div>
-              {/* Rate driver — only if rateable and not yet rated */}
               {rateable && !hasRated(ride.driver._id) && (
                 <button
                   onClick={() =>
@@ -243,7 +251,6 @@ const RideCard = ({
                         ★ {p.trustScore}
                       </span>
                     )}
-                    {/* Rate each passenger independently */}
                     {rateable && !hasRated(p._id) && (
                       <button
                         onClick={() =>
@@ -277,7 +284,6 @@ const RideCard = ({
               </div>
             )}
 
-          {/* All rated notice */}
           {allRated && (
             <div className="mb-3 flex items-center gap-1.5 text-xs text-teal-600 bg-teal-50 rounded-xl px-3 py-2">
               <Star className="w-3.5 h-3.5 fill-teal-500 text-teal-500" />
@@ -285,20 +291,39 @@ const RideCard = ({
             </div>
           )}
 
-          {/* Map toggle */}
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-stone-400 hover:text-teal-600 transition-colors py-1 mb-3"
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            {expanded ? "Hide map" : "Show route on map"}
-            {expanded ? (
-              <ChevronUp className="w-3 h-3" />
-            ) : (
-              <ChevronDown className="w-3 h-3" />
+          {/* Chat + Map buttons row */}
+          <div className="flex gap-2 mb-3">
+            {/* Chat button */}
+            {canChat && (
+              <button
+                onClick={() => setChatOpen(true)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-teal-50 border border-teal-200 text-xs font-bold text-teal-700 hover:bg-teal-100 transition-colors relative"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                Ride Chat
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-xs font-black rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
             )}
-          </button>
+
+            {/* Map toggle */}
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-semibold text-stone-500 hover:text-teal-600 hover:border-teal-200 hover:bg-teal-50 transition-colors"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              {expanded ? "Hide map" : "Show map"}
+              {expanded ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              )}
+            </button>
+          </div>
 
           <AnimatePresence>
             {expanded && (
@@ -345,7 +370,6 @@ const RideCard = ({
                 {cancelling === ride._id ? "Cancelling..." : "Cancel Ride"}
               </button>
             )}
-
           {!isDriver &&
             !isPast &&
             ride.status !== "cancelled" &&
@@ -361,7 +385,6 @@ const RideCard = ({
         </div>
       </motion.div>
 
-      {/* Rating Modal */}
       {ratingTarget && (
         <RatingModal
           ratedUser={ratingTarget.user}
@@ -373,6 +396,16 @@ const RideCard = ({
             onRated(ride._id, ratingTarget.user._id);
             setRatingTarget(null);
           }}
+        />
+      )}
+
+      {chatOpen && (
+        <ChatModal
+          contextType="carpool"
+          contextId={ride._id}
+          title={chatTitle}
+          participants={participants}
+          onClose={() => setChatOpen(false)}
         />
       )}
     </>
@@ -389,8 +422,8 @@ export default function MyRides() {
   const [success, setSuccess] = useState("");
   const [cancelling, setCancelling] = useState(null);
   const [leaving, setLeaving] = useState(null);
-  // Track rated as rideId_userId combinations
   const [ratedKeys, setRatedKeys] = useState(new Set());
+  const [unreadCounts, setUnreadCounts] = useState({});
 
   const fetchRides = async () => {
     setLoading(true);
@@ -399,10 +432,11 @@ export default function MyRides() {
         api.get("/carpool/my"),
         api.get("/ratings/given"),
       ]);
-      setPosted(ridesRes.data.data.posted || []);
-      setJoined(ridesRes.data.data.joined || []);
+      const postedData = ridesRes.data.data.posted || [];
+      const joinedData = ridesRes.data.data.joined || [];
+      setPosted(postedData);
+      setJoined(joinedData);
 
-      // Build set of rideId_ratedUserId keys
       const keys = new Set(
         givenRes.data.data.map(
           (r) =>
@@ -410,6 +444,22 @@ export default function MyRides() {
         ),
       );
       setRatedKeys(keys);
+
+      // Fetch unread counts for all rides
+      const allRides = [...postedData, ...joinedData];
+      if (allRides.length > 0) {
+        try {
+          const unreadRes = await api.post("/messages/unread/bulk", {
+            contexts: allRides.map((r) => ({
+              contextType: "carpool",
+              contextId: r._id,
+            })),
+          });
+          setUnreadCounts(unreadRes.data.data || {});
+        } catch {
+          /* silent */
+        }
+      }
     } catch {
       setError("Could not load your rides.");
     } finally {
@@ -457,7 +507,6 @@ export default function MyRides() {
     }
   };
 
-  // Fix: a ride is active only if status is open/full AND departure is in the future
   const activePosted = posted.filter(
     (r) =>
       (r.status === "open" || r.status === "full") &&
@@ -508,7 +557,6 @@ export default function MyRides() {
             </p>
           </motion.div>
 
-          {/* Stats */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -543,7 +591,6 @@ export default function MyRides() {
             ))}
           </motion.div>
 
-          {/* Tabs */}
           <div className="flex gap-1 bg-stone-100 p-1 rounded-xl mb-5">
             {[
               ["active", "Active"],
@@ -552,11 +599,7 @@ export default function MyRides() {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
-                  tab === t
-                    ? "bg-white text-stone-900 shadow-sm"
-                    : "text-stone-400 hover:text-stone-600"
-                }`}
+                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${tab === t ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"}`}
               >
                 {label}
               </button>
@@ -630,6 +673,7 @@ export default function MyRides() {
                         leaving={leaving}
                         ratedKeys={ratedKeys}
                         onRated={handleRated}
+                        unreadCount={unreadCounts[`carpool_${ride._id}`] || 0}
                       />
                     ))}
                   </div>
@@ -671,6 +715,7 @@ export default function MyRides() {
                         leaving={leaving}
                         ratedKeys={ratedKeys}
                         onRated={handleRated}
+                        unreadCount={unreadCounts[`carpool_${ride._id}`] || 0}
                       />
                     ))}
                   </div>

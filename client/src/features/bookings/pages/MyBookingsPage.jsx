@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, Clock, MapPin, XCircle, Star } from "lucide-react";
+import {
+  CalendarDays,
+  Clock,
+  MapPin,
+  XCircle,
+  Star,
+  MessageCircle,
+} from "lucide-react";
 import { getMyBookings, cancelBooking } from "../../../services/bookingService";
 import DashboardLayout from "../../../components/ui/DashboardLayout";
 import RatingModal from "../../../components/RatingModal";
+import ChatModal from "../../../components/ChatModal";
 import { Home, Car, Shield, Bell } from "lucide-react";
 import api from "../../../lib/api";
 
@@ -32,7 +40,6 @@ const STATUS_STYLES = {
   cancelled: "bg-stone-100 text-stone-500",
 };
 
-// Rateable: confirmed booking whose endTime has passed
 const isRateable = (booking) => {
   if (booking.status !== "confirmed") return false;
   const bookingEnd = new Date(`${booking.date}T${booking.endTime}`);
@@ -44,7 +51,9 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(null);
   const [ratingModal, setRatingModal] = useState(null);
+  const [chatModal, setChatModal] = useState(null);
   const [ratedIds, setRatedIds] = useState(new Set());
+  const [unreadCounts, setUnreadCounts] = useState({});
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -53,11 +62,28 @@ export default function MyBookingsPage() {
           getMyBookings(),
           api.get("/ratings/given"),
         ]);
-        setBookings(bookRes.data);
+        const bookData = bookRes.data || [];
+        setBookings(bookData);
         const rated = new Set(
           givenRes.data.data.map((r) => r.contextId?.toString()),
         );
         setRatedIds(rated);
+
+        // Fetch unread counts for bookings that are not cancelled
+        const activeBookings = bookData.filter((b) => b.status !== "cancelled");
+        if (activeBookings.length > 0) {
+          try {
+            const unreadRes = await api.post("/messages/unread/bulk", {
+              contexts: activeBookings.map((b) => ({
+                contextType: "parking",
+                contextId: b._id,
+              })),
+            });
+            setUnreadCounts(unreadRes.data.data || {});
+          } catch {
+            /* silent */
+          }
+        }
       } catch {
         toast.error("Failed to load bookings");
       } finally {
@@ -127,97 +153,124 @@ export default function MyBookingsPage() {
             {bookings.map((booking) => {
               const rateable = isRateable(booking);
               const alreadyRated = ratedIds.has(booking._id?.toString());
-              const homeowner = booking.homeowner; // populated by backend
+              const homeowner = booking.homeowner;
+              const canChat = booking.status !== "cancelled";
+              const unread = unreadCounts[`parking_${booking._id}`] || 0;
 
               return (
                 <div
                   key={booking._id}
-                  className="bg-white border border-stone-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-sm transition-shadow"
+                  className="bg-white border border-stone-200 rounded-2xl p-5 hover:shadow-sm transition-shadow"
                 >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${STATUS_STYLES[booking.status]}`}
-                      >
-                        {booking.status}
-                      </span>
-                      <span className="text-xs text-stone-400">
-                        #{booking._id.slice(-6).toUpperCase()}
-                      </span>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                    <div className="flex-1 space-y-3">
+                      {/* Status + ID */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${STATUS_STYLES[booking.status]}`}
+                        >
+                          {booking.status}
+                        </span>
+                        <span className="text-xs text-stone-400">
+                          #{booking._id.slice(-6).toUpperCase()}
+                        </span>
+                      </div>
+
+                      {/* Date, time, price */}
+                      <div className="flex flex-wrap gap-4 text-sm text-stone-600">
+                        <span className="flex items-center gap-1.5">
+                          <CalendarDays className="w-3.5 h-3.5 text-stone-400" />
+                          {booking.date}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-stone-400" />
+                          {booking.startTime} — {booking.endTime}
+                        </span>
+                        <span className="flex items-center gap-1.5 font-bold text-teal-600">
+                          <MapPin className="w-3.5 h-3.5" />৳
+                          {booking.totalPrice}
+                        </span>
+                      </div>
+
+                      {/* Homeowner info */}
+                      {homeowner && (
+                        <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 w-fit">
+                          <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden flex-shrink-0 border border-amber-200">
+                            {homeowner.photoUrl ? (
+                              <img
+                                src={homeowner.photoUrl}
+                                className="w-full h-full object-cover"
+                                alt={homeowner.name}
+                              />
+                            ) : (
+                              <span className="text-xs font-bold text-amber-700">
+                                {homeowner.name?.[0]?.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-stone-700">
+                              {homeowner.name}
+                            </p>
+                            <p className="text-xs text-stone-400">
+                              Homeowner · Trust {homeowner.trustScore}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Already rated */}
+                      {rateable && alreadyRated && (
+                        <div className="flex items-center gap-1.5 text-xs text-teal-600">
+                          <Star className="w-3.5 h-3.5 fill-teal-500 text-teal-500" />
+                          You've rated this booking
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex flex-wrap gap-4 text-sm text-stone-600">
-                      <span className="flex items-center gap-1.5">
-                        <CalendarDays className="w-3.5 h-3.5 text-stone-400" />
-                        {booking.date}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-stone-400" />
-                        {booking.startTime} — {booking.endTime}
-                      </span>
-                      <span className="flex items-center gap-1.5 font-bold text-teal-600">
-                        <MapPin className="w-3.5 h-3.5" />৳{booking.totalPrice}
-                      </span>
-                    </div>
-
-                    {/* Homeowner info */}
-                    {homeowner && (
-                      <div className="flex items-center gap-2 bg-stone-50 rounded-xl px-3 py-2 w-fit">
-                        <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                          {homeowner.photoUrl ? (
-                            <img
-                              src={homeowner.photoUrl}
-                              className="w-full h-full object-cover"
-                              alt={homeowner.name}
-                            />
-                          ) : (
-                            <span className="text-xs font-bold text-amber-600">
-                              {homeowner.name?.[0]?.toUpperCase()}
+                    {/* Action buttons — vertical stack */}
+                    <div className="flex sm:flex-col gap-2 flex-shrink-0">
+                      {/* Chat button */}
+                      {canChat && homeowner && (
+                        <button
+                          onClick={() => setChatModal({ booking, homeowner })}
+                          className="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-stone-50 border border-stone-200 px-3 py-2 rounded-xl hover:bg-stone-100 transition-colors relative"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          Chat
+                          {unread > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-xs font-black rounded-full flex items-center justify-center">
+                              {unread > 9 ? "9+" : unread}
                             </span>
                           )}
-                        </div>
-                        <p className="text-xs font-semibold text-stone-600">
-                          {homeowner.name}
-                        </p>
-                        <p className="text-xs text-stone-400">
-                          · Trust {homeowner.trustScore}
-                        </p>
-                      </div>
-                    )}
+                        </button>
+                      )}
 
-                    {/* Already rated notice */}
-                    {rateable && alreadyRated && (
-                      <div className="flex items-center gap-1.5 text-xs text-teal-600">
-                        <Star className="w-3.5 h-3.5 fill-teal-500 text-teal-500" />
-                        You've rated this booking
-                      </div>
-                    )}
-                  </div>
+                      {/* Rate button */}
+                      {rateable && !alreadyRated && homeowner && (
+                        <button
+                          onClick={() => setRatingModal({ booking, homeowner })}
+                          className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl hover:bg-amber-100 transition-colors"
+                        >
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          Rate Spot
+                        </button>
+                      )}
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Rate homeowner button */}
-                    {rateable && !alreadyRated && homeowner && (
-                      <button
-                        onClick={() => setRatingModal({ booking, homeowner })}
-                        className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl hover:bg-amber-100 transition-colors"
-                      >
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                        Rate Spot
-                      </button>
-                    )}
-
-                    {booking.status !== "cancelled" && (
-                      <button
-                        onClick={() => handleCancel(booking._id)}
-                        disabled={cancelling === booking._id}
-                        className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-600 border border-red-200 hover:border-red-300 px-3 py-1.5 rounded-xl transition-colors disabled:opacity-50"
-                      >
-                        <XCircle className="w-3.5 h-3.5" />
-                        {cancelling === booking._id
-                          ? "Cancelling..."
-                          : "Cancel"}
-                      </button>
-                    )}
+                      {/* Cancel button */}
+                      {booking.status !== "cancelled" && (
+                        <button
+                          onClick={() => handleCancel(booking._id)}
+                          disabled={cancelling === booking._id}
+                          className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:text-red-600 border border-red-200 hover:border-red-300 px-3 py-2 rounded-xl transition-colors disabled:opacity-50"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          {cancelling === booking._id
+                            ? "Cancelling..."
+                            : "Cancel"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -235,6 +288,22 @@ export default function MyBookingsPage() {
           ratedRole="homeowner"
           onClose={() => setRatingModal(null)}
           onSuccess={() => handleRated(ratingModal.booking._id)}
+        />
+      )}
+
+      {/* Chat Modal — parking theme */}
+      {chatModal && (
+        <ChatModal
+          contextType="parking"
+          contextId={chatModal.booking._id}
+          title={`Booking #${chatModal.booking._id.slice(-6).toUpperCase()}`}
+          participants={[
+            {
+              name: chatModal.homeowner.name,
+              photoUrl: chatModal.homeowner.photoUrl,
+            },
+          ]}
+          onClose={() => setChatModal(null)}
         />
       )}
     </DashboardLayout>

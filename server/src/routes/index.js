@@ -9,7 +9,7 @@ import userRoutes from "./userRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import carpoolRoutes from "./carpoolRouter.js";
 import ratingRoutes from "./ratingRoutes.js";
-
+import messageRoutes from "./messageRoutes.js";
 const router = Router();
 
 router.get("/", (req, res) => {
@@ -26,4 +26,5 @@ router.use("/user", userRoutes);
 router.use("/admin", adminRoutes);
 router.use("/carpool", carpoolRoutes);
 router.use("/ratings", ratingRoutes);
+router.use("/messages", messageRoutes);
 export default router;
