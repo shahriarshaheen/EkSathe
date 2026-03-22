@@ -41,6 +41,7 @@ import AdminIncidentsPage from "./features/incidents/pages/AdminIncidentsPage";
 
 // Booking
 import MyBookingsPage from "./features/bookings/pages/MyBookingsPage";
+import HomeownerBookingsPage from "./features/bookings/pages/HomeownerBookingsPage";
 import BookSpotPage from "./features/bookings/pages/BookSpotPage";
 
 // Payment
@@ -197,6 +198,16 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <BookSpotPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Homeowner bookings */}
+          <Route
+            path="/dashboard/homeowner-bookings"
+            element={
+              <ProtectedRoute>
+                <HomeownerBookingsPage />
               </ProtectedRoute>
             }
           />

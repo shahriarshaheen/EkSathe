@@ -10,8 +10,10 @@ import {
   Clock,
   Users,
   ChevronDown,
+  SlidersHorizontal,
 } from "lucide-react";
 import api from "../lib/api";
+import { initiateCarpoolPayment } from "../services/paymentService";
 import { useAuth } from "../context/AuthContext";
 
 const TAKA = "\u09F3";
@@ -33,17 +35,17 @@ const UNIVERSITIES = [
 
 // Map university names to preset destination keywords
 const UNI_KEYWORDS = {
-  nsu: ["bashundhara", "north south"],
-  buet: ["palashi", "buet"],
-  du: ["nilkhet", "dhaka university"],
-  bracu: ["mohakhali", "brac"],
-  iub: ["bashundhara", "independent"],
-  ewu: ["aftabnagar", "east west"],
-  mist: ["mirpur", "mist"],
-  uiu: ["satarkul", "united international"],
-  aiub: ["kuratoli", "american international"],
-  ju: ["savar", "jahangirnagar"],
-  stamford: ["siddeswari", "stamford"],
+  NSU: ["bashundhara", "nsu", "north south"],
+  BUET: ["palashi", "buet"],
+  "Dhaka University": ["nilkhet", "dhaka university", "du"],
+  "BRAC University": ["mohakhali", "brac"],
+  IUB: ["bashundhara", "iub", "independent"],
+  "East West University": ["aftabnagar", "east west"],
+  MIST: ["mirpur", "mist"],
+  UIU: ["satarkul", "uiu", "united"],
+  AIUB: ["kuratoli", "aiub"],
+  "Jahangirnagar University": ["savar", "jahangirnagar"],
+  "Stamford University": ["siddeswari", "stamford"],
 };
 
 function SeatDots({ total, available }) {
@@ -419,12 +421,13 @@ export default function BrowseCarpool() {
     }
   });
 
-  // FIX: user.university is already the university ID (e.g. "nsu", "buet")
-  // Use it directly to look up keywords — no string matching needed
-  const uniId = user?.university || null;
-  const userUniName = uniId
-    ? UNIVERSITIES.find((u) => u.toLowerCase().includes(uniId.toLowerCase())) ||
-      uniId.toUpperCase()
+  // Get user's university name from their profile
+  const userUniName = user?.university
+    ? UNIVERSITIES.find(
+        (u) =>
+          u.toLowerCase().includes(user.university?.toLowerCase?.()) ||
+          user.university?.toLowerCase?.().includes(u.toLowerCase()),
+      )
     : null;
 
   useEffect(() => {
@@ -473,9 +476,9 @@ export default function BrowseCarpool() {
   });
 
   // Suggested rides — match user's university destination keywords
-  const suggestedRoutes = uniId
+  const suggestedRoutes = userUniName
     ? filteredRoutes.filter((r) => {
-        const keywords = UNI_KEYWORDS[uniId] || [];
+        const keywords = UNI_KEYWORDS[userUniName] || [];
         const dest = (
           r.destination.name +
           " " +
@@ -498,8 +501,18 @@ export default function BrowseCarpool() {
     setError("");
     try {
       await api.post(`/carpool/routes/${routeId}/join`, {});
-      setJoinSuccess("You've joined the ride!");
+      setJoinSuccess("Seat reserved! Redirecting to payment...");
+      try {
+        const payRes = await initiateCarpoolPayment(routeId);
+        if (payRes.url) {
+          window.location.href = payRes.url;
+          return;
+        }
+      } catch {
+        // Payment initiation failed — still joined, show success
+      }
       loadRoutes();
+      setJoinSuccess("You have joined the ride!");
       setTimeout(() => setJoinSuccess(""), 4000);
     } catch (err) {
       setError(err.message || "Could not join ride.");

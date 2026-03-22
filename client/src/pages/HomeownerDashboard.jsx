@@ -16,11 +16,13 @@ import DashboardLayout from "../components/ui/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 
+// FIX: removed Carpooling from homeowner nav (not relevant to homeowners)
+// FIX: removed soon:true from Bookings so homeowners can access it
+// FIX: Bookings now goes to /dashboard/homeowner-bookings (homeowner-specific page)
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
   { path: "/dashboard/my-listings", label: "My Listings", icon: ParkingSquare },
-  // FIX: removed soon:true so homeowners can access bookings page
-  { path: "/dashboard/bookings", label: "Bookings", icon: Users },
+  { path: "/dashboard/homeowner-bookings", label: "Bookings", icon: Users },
   { path: "/dashboard/earnings", label: "Earnings", icon: Banknote },
   {
     path: "/dashboard/notifications",
@@ -52,7 +54,6 @@ const HomeownerDashboard = () => {
   const navigate = useNavigate();
   const firstName = user?.name?.split(" ")[0] || "there";
 
-  // FIX: fetch real stats instead of hardcoded zeros
   const [stats, setStats] = useState({
     activeListings: 0,
     totalBookings: 0,
@@ -60,7 +61,6 @@ const HomeownerDashboard = () => {
   });
 
   useEffect(() => {
-    // Fetch listings count
     api
       .get("/parking/my/listings")
       .then((r) => {
@@ -72,16 +72,13 @@ const HomeownerDashboard = () => {
       })
       .catch(() => {});
 
-    // Fetch bookings and compute earnings
     api
       .get("/bookings/homeowner")
       .then((r) => {
         const bookings = r.data.data || [];
-        const confirmed = bookings.filter((b) => b.status === "confirmed");
-        const earnings = confirmed.reduce(
-          (sum, b) => sum + (b.totalPrice || 0),
-          0,
-        );
+        const earnings = bookings
+          .filter((b) => b.status === "confirmed")
+          .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
         setStats((prev) => ({
           ...prev,
           totalBookings: bookings.length,
@@ -94,7 +91,6 @@ const HomeownerDashboard = () => {
   return (
     <DashboardLayout navItems={navItems}>
       <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-        {/* Header */}
         <div className="mb-8 flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-stone-900 tracking-tight">
@@ -113,7 +109,6 @@ const HomeownerDashboard = () => {
           </button>
         </div>
 
-        {/* Stats — FIX: now showing real data */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
             label="Active Listings"
@@ -151,10 +146,9 @@ const HomeownerDashboard = () => {
           />
         </div>
 
-        {/* Quick actions banner when bookings exist */}
         {stats.totalBookings > 0 ? (
           <div
-            onClick={() => navigate("/dashboard/bookings")}
+            onClick={() => navigate("/dashboard/homeowner-bookings")}
             className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 flex items-center justify-between cursor-pointer hover:bg-blue-100 transition-colors"
           >
             <div className="flex items-center gap-3">
@@ -185,7 +179,6 @@ const HomeownerDashboard = () => {
             </svg>
           </div>
         ) : (
-          /* Get started banner when no listings */
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-8">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -197,7 +190,6 @@ const HomeownerDashboard = () => {
                 </h3>
                 <p className="text-sm text-amber-700 leading-relaxed">
                   Turn your unused driveway or garage into a steady income.
-                  Students near your area are actively looking for parking.
                 </p>
                 <button
                   onClick={() => navigate("/dashboard/create-listing")}
@@ -210,7 +202,6 @@ const HomeownerDashboard = () => {
           </div>
         )}
 
-        {/* Content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white rounded-xl border border-stone-200 p-6">
             <h3 className="text-sm font-semibold text-stone-700 mb-5">

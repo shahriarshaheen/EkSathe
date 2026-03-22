@@ -3,7 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { CalendarDays, Clock, MapPin, Home, Car, Shield, Bell } from "lucide-react";
+import {
+  CalendarDays,
+  Clock,
+  MapPin,
+  Home,
+  Car,
+  Shield,
+  Bell,
+} from "lucide-react";
 import { bookingSchema } from "../schemas/bookingSchema";
 import { createBooking } from "../../../services/bookingService";
 import { initiatePayment } from "../../../services/paymentService";
@@ -16,10 +24,19 @@ const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
   { path: "/dashboard/parking", label: "Find Parking", icon: MapPin },
   { path: "/dashboard/bookings", label: "My Bookings", icon: CalendarDays },
-  { path: "/dashboard/carpool", label: "Carpooling", icon: Car, soon: true },
-  { path: "/dashboard/sos", label: "SOS & Safety", icon: Shield, soon: true },
-  { path: "/dashboard/report-incident", label: "Report Incident", icon: Shield },
-  { path: "/dashboard/notifications", label: "Notifications", icon: Bell, soon: true },
+  { path: "/dashboard/carpool", label: "Carpooling", icon: Car },
+  { path: "/dashboard/sos", label: "SOS & Safety", icon: Shield },
+  {
+    path: "/dashboard/report-incident",
+    label: "Report Incident",
+    icon: Shield,
+  },
+  {
+    path: "/dashboard/notifications",
+    label: "Notifications",
+    icon: Bell,
+    soon: true,
+  },
 ];
 
 const calcPrice = (startTime, endTime, pricePerDay) => {
@@ -116,7 +133,9 @@ export default function BookSpotPage() {
             <CalendarDays className="w-6 h-6 text-teal-600" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-stone-800">Book a Spot</h1>
+            <h1 className="text-xl font-semibold text-stone-800">
+              Book a Spot
+            </h1>
             <p className="text-sm text-stone-500">Pick your date and time</p>
           </div>
         </div>
@@ -128,7 +147,8 @@ export default function BookSpotPage() {
             <p className="text-sm font-semibold text-stone-800">{spot.title}</p>
             <p className="text-xs text-stone-500 mt-0.5">{spot.address}</p>
             <p className="text-xs font-medium text-teal-600 mt-1">
-              ৳{spot.pricePerDay} / day · Available {spot.availableFrom} – {spot.availableTo}
+              ৳{spot.pricePerDay} / day · Available {spot.availableFrom} –{" "}
+              {spot.availableTo}
             </p>
           </div>
         </div>
@@ -158,15 +178,19 @@ export default function BookSpotPage() {
               />
             </div>
 
-            <div className={`rounded-xl px-4 py-3 flex items-center justify-between
-              ${totalPrice > 0 ? "bg-teal-50 border border-teal-100" : "bg-stone-50 border border-stone-100"}`}>
+            <div
+              className={`rounded-xl px-4 py-3 flex items-center justify-between
+              ${totalPrice > 0 ? "bg-teal-50 border border-teal-100" : "bg-stone-50 border border-stone-100"}`}
+            >
               <div className="flex items-center gap-2 text-sm text-stone-600">
                 <Clock className="w-4 h-4 text-stone-400" />
                 {startTime && endTime && totalPrice > 0
                   ? `${startTime} — ${endTime}`
                   : "Select start and end time"}
               </div>
-              <p className={`text-sm font-bold ${totalPrice > 0 ? "text-teal-700" : "text-stone-400"}`}>
+              <p
+                className={`text-sm font-bold ${totalPrice > 0 ? "text-teal-700" : "text-stone-400"}`}
+              >
                 {totalPrice > 0 ? `৳${totalPrice}` : "৳0"}
               </p>
             </div>

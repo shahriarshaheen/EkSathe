@@ -9,18 +9,27 @@ import {
   Navigation,
   Star,
   Clock,
+  CalendarDays,
+  ShieldAlert,
 } from "lucide-react";
 import DashboardLayout from "../components/ui/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 
-// FIX: added My Ratings to navItems so students can find the ratings page
+// FIX: added My Bookings, My Ratings, Report Incident to student nav
+// removed from MyBookingsPage navItems (each page should have role-correct nav)
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
   { path: "/dashboard/parking", label: "Find Parking", icon: MapPin },
+  { path: "/dashboard/bookings", label: "My Bookings", icon: CalendarDays },
   { path: "/dashboard/carpool", label: "Carpooling", icon: Car },
   { path: "/dashboard/sos", label: "SOS & Safety", icon: Shield },
   { path: "/dashboard/ratings", label: "My Ratings", icon: Star },
+  {
+    path: "/dashboard/report-incident",
+    label: "Report Incident",
+    icon: ShieldAlert,
+  },
   {
     path: "/dashboard/notifications",
     label: "Notifications",
@@ -81,7 +90,6 @@ const StudentDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const firstName = user?.name?.split(" ")[0] || "there";
-
   const [ridesShared, setRidesShared] = useState(0);
 
   useEffect(() => {
@@ -104,7 +112,6 @@ const StudentDashboard = () => {
   return (
     <DashboardLayout navItems={navItems}>
       <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-stone-900 tracking-tight">
             Good morning, {firstName} 👋
@@ -114,7 +121,6 @@ const StudentDashboard = () => {
           </p>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard label="Saved Spots" value="0" sub="No favorites yet" />
           <StatCard
@@ -137,7 +143,6 @@ const StudentDashboard = () => {
           />
         </div>
 
-        {/* Quick actions */}
         <div className="mb-8">
           <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-4">
             Quick Actions
@@ -174,7 +179,6 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        {/* Active carpool banner */}
         {ridesShared > 0 && (
           <div
             onClick={() => navigate("/dashboard/carpool/my-rides")}
@@ -207,7 +211,6 @@ const StudentDashboard = () => {
           </div>
         )}
 
-        {/* Recent activity + profile */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white rounded-xl border border-stone-200 p-5">
             <h3 className="text-sm font-semibold text-stone-700 mb-4">
@@ -237,7 +240,6 @@ const StudentDashboard = () => {
               Your Profile
             </h3>
             <div className="flex flex-col items-center text-center gap-3">
-              {/* FIX: show real photo if exists */}
               <div className="w-14 h-14 rounded-full bg-teal-50 border-2 border-teal-100 flex items-center justify-center overflow-hidden">
                 {user?.photoUrl ? (
                   <img
@@ -271,7 +273,6 @@ const StudentDashboard = () => {
                   {user?.trustScore ?? 0}
                 </p>
               </div>
-              {/* FIX: link to ratings page */}
               <button
                 onClick={() => navigate("/dashboard/ratings")}
                 className="w-full text-xs font-semibold text-stone-500 hover:text-teal-600 transition-colors py-1"
