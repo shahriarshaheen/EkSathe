@@ -2,12 +2,28 @@ import mongoose from "mongoose";
 
 const paymentSchema = new mongoose.Schema(
   {
+    // "parking" or "carpool"
+    contextType: {
+      type: String,
+      enum: ["parking", "carpool"],
+      default: "parking",
+    },
+
+    // Parking: reference to Booking
     bookingId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
-      required: true,
+      default: null,
     },
 
+    // Carpool: reference to CarpoolRoute
+    carpoolRouteId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CarpoolRoute",
+      default: null,
+    },
+
+    // Who is paying
     studentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -37,7 +53,7 @@ const paymentSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Payment = mongoose.model("Payment", paymentSchema);
