@@ -13,10 +13,10 @@ const theme = {
     myBubble: "bg-teal-600 text-white rounded-2xl rounded-tr-sm",
     theirBubble:
       "bg-white text-stone-800 border border-stone-200 rounded-2xl rounded-tl-sm",
-    sendBtn: "bg-teal-600 hover:bg-teal-700 disabled:bg-teal-300",
+    sendBtn: "bg-teal-600 hover:bg-teal-700",
     inputFocus: "focus:ring-teal-500/20 focus:border-teal-500",
     label: "Ride Chat",
-    myTime: "text-teal-100",
+    myTime: "text-stone-400",
     theirTime: "text-stone-400",
   },
   parking: {
@@ -25,12 +25,18 @@ const theme = {
     myBubble: "bg-stone-900 text-white rounded-2xl rounded-tr-sm",
     theirBubble:
       "bg-amber-50 text-stone-800 border border-amber-200 rounded-2xl rounded-tl-sm",
-    sendBtn: "bg-stone-900 hover:bg-stone-700 disabled:bg-stone-400",
+    sendBtn: "bg-stone-900 hover:bg-stone-700",
     inputFocus: "focus:ring-stone-400/20 focus:border-stone-500",
     label: "Booking Chat",
     myTime: "text-stone-400",
     theirTime: "text-stone-400",
   },
+};
+
+const extractId = (obj) => {
+  if (!obj) return "";
+  if (typeof obj === "string") return obj;
+  return (obj._id || obj.id || "").toString();
 };
 
 function Avatar({ user }) {
@@ -59,9 +65,9 @@ function MessageBubble({ msg, isMe, t }) {
 
   if (isMe) {
     return (
-      <div className="flex flex-col items-end gap-0.5">
+      <div className="flex flex-col items-end gap-0.5 pl-12">
         <div
-          className={`px-4 py-2.5 max-w-[75%] text-sm leading-relaxed shadow-sm ${t.myBubble}`}
+          className={`px-4 py-2.5 text-sm leading-relaxed shadow-sm ${t.myBubble}`}
         >
           {msg.text}
         </div>
@@ -71,11 +77,11 @@ function MessageBubble({ msg, isMe, t }) {
   }
 
   return (
-    <div className="flex items-end gap-2 max-w-[80%]">
+    <div className="flex items-end gap-2 pr-12">
       <Avatar user={msg.sender} />
       <div className="flex flex-col gap-0.5">
         <span className="text-xs text-stone-400 font-medium px-1">
-          {msg.sender?.name?.split(" ")[0]}
+          {msg.sender?.name?.split(" ")[0] || "User"}
         </span>
         <div
           className={`px-4 py-2.5 text-sm leading-relaxed shadow-sm ${t.theirBubble}`}
@@ -96,6 +102,11 @@ export default function ChatModal({
   onClose,
 }) {
   const { user } = useAuth();
+
+  // ── DEBUG ──────────────────────────────────────────
+  console.log("AUTH USER OBJECT:", JSON.stringify(user));
+  // ──────────────────────────────────────────────────
+
   const t = theme[contextType] || theme.carpool;
   const Icon = t.icon;
 
@@ -104,19 +115,54 @@ export default function ChatModal({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [myId, setMyId] = useState("");
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const pollRef = useRef(null);
   const lastCountRef = useRef(0);
 
-  // Get current user's ID — try multiple fields
-  const myId = user?._id || user?.id || "";
+  // Resolve current user's ID
+  useEffect(() => {
+    if (user) {
+      const id = extractId(user);
+      console.log("RESOLVED myId from user object:", id);
+      if (id) {
+        setMyId(id);
+        return;
+      }
+    }
+    // Fallback: decode JWT
+    try {
+      const token = localStorage.getItem("eksathe_token");
+      if (token) {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const id = (payload.id || payload._id || payload.sub || "").toString();
+        console.log("RESOLVED myId from JWT:", id, "payload:", payload);
+        if (id) setMyId(id);
+      }
+    } catch (e) {
+      console.log("JWT decode failed:", e);
+    }
+  }, [user]);
 
-  const isMine = (msg) => {
-    const senderId = msg.sender?._id || msg.sender?.id || msg.sender;
-    return senderId?.toString() === myId?.toString();
-  };
+  const isMine = useCallback(
+    (msg) => {
+      const senderId = extractId(msg.sender);
+      console.log(
+        "isMine check — myId:",
+        myId,
+        "| senderId:",
+        senderId,
+        "| match:",
+        senderId === myId,
+        "| raw sender:",
+        JSON.stringify(msg.sender),
+      );
+      return senderId === myId;
+    },
+    [myId],
+  );
 
   const scrollToBottom = (smooth = true) => {
     bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
@@ -128,9 +174,15 @@ export default function ChatModal({
         const res = await api.get(`/messages/${contextType}/${contextId}`);
         const msgs = res.data.data || [];
         if (msgs.length !== lastCountRef.current) {
+          console.log(
+            "MESSAGES RECEIVED:",
+            JSON.stringify(
+              msgs.map((m) => ({ id: m._id, sender: m.sender, text: m.text })),
+            ),
+          );
           setMessages(msgs);
           lastCountRef.current = msgs.length;
-          setTimeout(() => scrollToBottom(lastCountRef.current > 0), 80);
+          setTimeout(() => scrollToBottom(true), 80);
         }
       } catch {
         if (!silent) setError("Could not load messages.");
@@ -161,7 +213,9 @@ export default function ChatModal({
       const res = await api.post(`/messages/${contextType}/${contextId}`, {
         text: trimmed,
       });
-      setMessages((prev) => [...prev, res.data.data]);
+      const newMsg = res.data.data;
+      console.log("SENT MESSAGE RESPONSE:", JSON.stringify(newMsg));
+      setMessages((prev) => [...prev, newMsg]);
       lastCountRef.current += 1;
       setTimeout(() => scrollToBottom(true), 60);
     } catch {
@@ -180,7 +234,6 @@ export default function ChatModal({
     }
   };
 
-  // Group messages by date
   const grouped = messages.reduce((acc, msg) => {
     const date = new Date(msg.createdAt).toLocaleDateString("en-BD", {
       weekday: "short",
@@ -211,7 +264,6 @@ export default function ChatModal({
           className="relative w-full sm:max-w-md bg-white sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden z-10"
           style={{ height: "85vh", maxHeight: 640 }}
         >
-          {/* Header */}
           <div className={`${t.headerBg} px-5 py-4 flex-shrink-0`}>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
@@ -228,8 +280,6 @@ export default function ChatModal({
                 <X className="w-4 h-4 text-white" />
               </button>
             </div>
-
-            {/* Participants */}
             {participants.length > 0 && (
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10">
                 <div className="flex -space-x-2">
@@ -251,13 +301,6 @@ export default function ChatModal({
                       )}
                     </div>
                   ))}
-                  {participants.length > 4 && (
-                    <div className="w-6 h-6 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center">
-                      <span className="text-xs font-bold text-white">
-                        +{participants.length - 4}
-                      </span>
-                    </div>
-                  )}
                 </div>
                 <span className="text-white/60 text-xs">
                   {participants.length} participant
@@ -267,21 +310,15 @@ export default function ChatModal({
             )}
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-4 bg-stone-50/60">
             {loading ? (
               <div className="flex items-center justify-center h-full">
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="w-6 h-6 text-stone-400 animate-spin" />
-                  <p className="text-xs text-stone-400">Loading messages...</p>
-                </div>
+                <Loader2 className="w-6 h-6 text-stone-400 animate-spin" />
               </div>
             ) : messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
                 <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                    contextType === "carpool" ? "bg-teal-50" : "bg-amber-50"
-                  }`}
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center ${contextType === "carpool" ? "bg-teal-50" : "bg-amber-50"}`}
                 >
                   <Icon
                     className={`w-7 h-7 ${contextType === "carpool" ? "text-teal-400" : "text-amber-400"}`}
@@ -302,7 +339,7 @@ export default function ChatModal({
                   <div key={date}>
                     <div className="flex items-center gap-2 my-4">
                       <div className="flex-1 h-px bg-stone-200" />
-                      <span className="text-xs text-stone-400 font-medium px-2 bg-stone-50/60">
+                      <span className="text-xs text-stone-400 font-medium px-2">
                         {date}
                       </span>
                       <div className="flex-1 h-px bg-stone-200" />
@@ -321,7 +358,6 @@ export default function ChatModal({
                 ))}
               </div>
             )}
-
             {error && (
               <div className="text-xs text-red-500 text-center py-2">
                 {error}
@@ -330,7 +366,6 @@ export default function ChatModal({
             <div ref={bottomRef} />
           </div>
 
-          {/* Input */}
           <div className="px-4 py-3 bg-white border-t border-stone-100 flex-shrink-0">
             <div className="flex items-end gap-2">
               <textarea
@@ -352,7 +387,7 @@ export default function ChatModal({
               <button
                 onClick={handleSend}
                 disabled={!text.trim() || sending}
-                className={`w-11 h-11 rounded-2xl ${t.sendBtn} text-white flex items-center justify-center transition-all active:scale-95 flex-shrink-0`}
+                className={`w-11 h-11 rounded-2xl ${t.sendBtn} text-white flex items-center justify-center transition-all active:scale-95 flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed`}
               >
                 {sending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

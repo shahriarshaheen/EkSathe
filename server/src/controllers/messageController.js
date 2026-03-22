@@ -2,23 +2,22 @@ import Message from "../models/Message.js";
 import CarpoolRoute from "../models/CarpoolRoute.js";
 import Booking from "../models/Booking.js";
 
-// ── Authorization check ───────────────────────────────────────
 const isParticipant = async (contextType, contextId, userId) => {
   if (contextType === "carpool") {
     const ride = await CarpoolRoute.findById(contextId);
     if (!ride) return false;
-    const isDriver = ride.driver.toString() === userId.toString();
-    const isPassenger = ride.passengers.some(
-      (p) => p.toString() === userId.toString(),
+    return (
+      ride.driver.toString() === userId.toString() ||
+      ride.passengers.some((p) => p.toString() === userId.toString())
     );
-    return isDriver || isPassenger;
   }
   if (contextType === "parking") {
     const booking = await Booking.findById(contextId);
     if (!booking) return false;
-    const isStudent = booking.studentId.toString() === userId.toString();
-    const isHomeowner = booking.homeownerId.toString() === userId.toString();
-    return isStudent || isHomeowner;
+    return (
+      booking.studentId.toString() === userId.toString() ||
+      booking.homeownerId.toString() === userId.toString()
+    );
   }
   return false;
 };
@@ -39,7 +38,7 @@ export const getMessages = async (req, res) => {
     }
 
     const messages = await Message.find({ contextType, contextId })
-      .populate("sender", "name photoUrl role")
+      .populate("sender", "_id name photoUrl role")
       .sort({ createdAt: 1 })
       .limit(100);
 
@@ -49,7 +48,16 @@ export const getMessages = async (req, res) => {
       { $addToSet: { readBy: req.user.id } },
     );
 
-    return res.status(200).json({ success: true, data: messages });
+    // Ensure _id is always a plain string in the response
+    const shaped = messages.map((m) => {
+      const obj = m.toObject();
+      if (obj.sender && obj.sender._id) {
+        obj.sender._id = obj.sender._id.toString();
+      }
+      return obj;
+    });
+
+    return res.status(200).json({ success: true, data: shaped });
   } catch (err) {
     console.error("getMessages error:", err);
     return res.status(500).json({ success: false, message: "Server error." });
@@ -66,11 +74,6 @@ export const sendMessage = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Message text is required." });
-    }
-    if (text.trim().length > 500) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Message too long (max 500 chars)." });
     }
 
     const allowed = await isParticipant(contextType, contextId, req.user.id);
@@ -91,8 +94,16 @@ export const sendMessage = async (req, res) => {
       readBy: [req.user.id],
     });
 
-    const populated = await message.populate("sender", "name photoUrl role");
-    return res.status(201).json({ success: true, data: populated });
+    const populated = await message.populate(
+      "sender",
+      "_id name photoUrl role",
+    );
+
+    // Shape sender _id to string
+    const obj = populated.toObject();
+    if (obj.sender?._id) obj.sender._id = obj.sender._id.toString();
+
+    return res.status(201).json({ success: true, data: obj });
   } catch (err) {
     console.error("sendMessage error:", err);
     return res.status(500).json({ success: false, message: "Server error." });
@@ -103,7 +114,6 @@ export const sendMessage = async (req, res) => {
 export const getUnreadCount = async (req, res) => {
   try {
     const { contextType, contextId } = req.params;
-
     const allowed = await isParticipant(contextType, contextId, req.user.id);
     if (!allowed) return res.status(200).json({ success: true, count: 0 });
 
@@ -114,15 +124,15 @@ export const getUnreadCount = async (req, res) => {
     });
 
     return res.status(200).json({ success: true, count });
-  } catch (err) {
+  } catch {
     return res.status(200).json({ success: true, count: 0 });
   }
 };
 
-// GET /api/messages/unread/bulk — get unread counts for multiple contexts
+// POST /api/messages/unread/bulk
 export const getBulkUnreadCounts = async (req, res) => {
   try {
-    const { contexts } = req.body; // [{ contextType, contextId }]
+    const { contexts } = req.body;
     if (!Array.isArray(contexts) || contexts.length === 0) {
       return res.status(200).json({ success: true, data: {} });
     }
@@ -140,7 +150,7 @@ export const getBulkUnreadCounts = async (req, res) => {
     );
 
     return res.status(200).json({ success: true, data: results });
-  } catch (err) {
+  } catch {
     return res.status(200).json({ success: true, data: {} });
   }
 };

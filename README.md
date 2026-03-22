@@ -8,33 +8,33 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 
 ## Project Status
 
-| Module                                     | Status                  |
-| ------------------------------------------ | ----------------------- |
-| Authentication System                      | ✅ Complete             |
-| Role-based Dashboards                      | ✅ Complete             |
-| University Email Restriction               | ✅ Complete             |
-| Student ID Verification (Admin)            | ✅ Complete             |
-| Profile Photo & Edit Page                  | ✅ Complete             |
-| Parking Spot Listing (F-01)                | ✅ Complete             |
-| Interactive Map View (F-02)                | ✅ Complete             |
-| Booking Calendar System (F-03)             | ✅ Complete             |
-| SSLCommerz Payment (F-04)                  | ✅ Complete             |
-| Homeowner Earnings Dashboard (F-05)        | ✅ Complete             |
-| Post Carpool Route + Map Picker (F-06)     | ✅ Complete             |
-| Ride Discovery & Smart Browse (F-07)       | ✅ Complete             |
-| Trust & Rating System (F-08)               | ✅ Complete             |
-| In-Ride Communication / Noticeboard (F-09) | 🔲 Sprint 2 — Remaining |
-| Rider Trust Profile (F-10)                 | 🔲 Sprint 2 — Remaining |
-| SOS Panic Button (F-11)                    | ✅ Complete             |
-| Live Trip Sharing (F-12)                   | 🔲 Sprint 3             |
-| Route Deviation Alert (F-13)               | 🔲 Sprint 3             |
-| Anonymous Incident Reporting (F-14)        | ✅ Complete             |
-| Admin Moderation Dashboard (F-15)          | ✅ Complete             |
-| Smart Demand Indicator (F-16)              | 🔲 Sprint 4             |
-| Dynamic Pricing Nudge (F-17)               | 🔲 Sprint 4             |
-| Firebase Push Notifications (F-18)         | 🔲 Sprint 4             |
-| Advanced Search & Filter (F-19)            | 🔲 Sprint 4             |
-| Trust Score & Badge System (F-20)          | 🔲 Sprint 4             |
+| Module                                 | Status      |
+| -------------------------------------- | ----------- |
+| Authentication System                  | ✅ Complete |
+| Role-based Dashboards                  | ✅ Complete |
+| University Email Restriction           | ✅ Complete |
+| Student ID Verification (Admin)        | ✅ Complete |
+| Profile Photo & Edit Page              | ✅ Complete |
+| Parking Spot Listing (F-01)            | ✅ Complete |
+| Interactive Map View (F-02)            | ✅ Complete |
+| Booking Calendar System (F-03)         | ✅ Complete |
+| SSLCommerz Payment (F-04)              | ✅ Complete |
+| Homeowner Earnings Dashboard (F-05)    | ✅ Complete |
+| Post Carpool Route + Map Picker (F-06) | ✅ Complete |
+| Ride Discovery & Smart Browse (F-07)   | ✅ Complete |
+| Trust & Rating System (F-08)           | ✅ Complete |
+| In-Ride & Booking Chat (F-09)          | ✅ Complete |
+| Anonymous Incident Reporting (F-10)    | ✅ Complete |
+| SOS Panic Button (F-11)                | ✅ Complete |
+| Rider Trust Profile (F-12)             | 🔲 Sprint 3 |
+| Live Trip Sharing (F-13)               | 🔲 Sprint 3 |
+| Route Deviation Alert (F-14)           | 🔲 Sprint 3 |
+| Admin Moderation Dashboard (F-15)      | ✅ Complete |
+| Smart Demand Indicator (F-16)          | 🔲 Sprint 4 |
+| Dynamic Pricing Nudge (F-17)           | 🔲 Sprint 4 |
+| Firebase Push Notifications (F-18)     | 🔲 Sprint 4 |
+| Advanced Search & Filter (F-19)        | 🔲 Sprint 4 |
+| Trust Score & Badge System (F-20)      | 🔲 Sprint 4 |
 
 ---
 
@@ -186,24 +186,23 @@ POST   /api/carpool/routes/:id/join
 DELETE /api/carpool/routes/:id/leave
 PATCH  /api/carpool/routes/:id/cancel
 GET    /api/carpool/my
-GET    /api/carpool/admin/routes          (admin)
-PATCH  /api/carpool/admin/routes/:id/cancel (admin)
+GET    /api/carpool/admin/routes
+PATCH  /api/carpool/admin/routes/:id/cancel
 ```
 
 ---
 
 ### Ride Discovery & Smart Browse (F-07)
 
-- Browse all open future carpool rides
-- University filter pills — narrow by institution
-- Gender-safe toggle — show female-only rides
-- Custom search by area or destination
-- My Rides page — active/past tabs for posted and joined rides
-- Expandable map on each ride card showing exact route
-- Driver sees full passenger list with photos and trust scores
-- Passenger sees driver info with trust score
-- Cancel ride (driver) and Leave ride (passenger) buttons
-- Unread message badge placeholder for future noticeboard
+- Full-page carpool experience — no sidebar, standalone layout
+- From/To search inputs with teal/rose dot indicators
+- "Suggested for you" section — reads user's registered university and surfaces matching rides at the top
+- University filter dropdown and gender-safe toggle
+- Skeleton loading cards — no spinner
+- Contextual empty state with Post a Ride CTA
+- My Rides page — active/past tabs, posted and joined rides
+- Expandable map per ride card, passenger manifest for drivers
+- Cancel ride (driver) and Leave ride (passenger) actions
 
 ---
 
@@ -211,18 +210,15 @@ PATCH  /api/carpool/admin/routes/:id/cancel (admin)
 
 Peer accountability system for both carpool and parking:
 
-- **Carpool ratings** — after departure time passes, Rate button appears on past rides
-  - Passenger rates driver (1–5 stars + comment)
-  - Driver rates each passenger individually
-- **Parking ratings** — after confirmed booking end time passes, Rate Spot button appears
-  - Student rates homeowner (1–5 stars + comment)
-- Quick comment chips per context — e.g. "Great driver!", "Punctual", "Left spot clean"
-- Custom text comment field
-- Trust score updates automatically on submission — 5★ = +3, 4★ = +2, 3★ = +1, 2★ = -1, 1★ = -3
-- Duplicate prevention — one rating per person per ride/booking
-- Already-rated notice shown on rated cards
-- My Ratings page — view all ratings received with star breakdown chart, and all ratings given
-- Filter by Carpool or Parking context
+- After departure time passes, Rate button appears per person on past rides
+- Driver rates each passenger individually — not blocked after first rating
+- Passenger rates driver
+- After confirmed booking end time, Rate Spot button appears on My Bookings
+- Student rates homeowner
+- Quick comment chips per context — "Great driver!", "Punctual", "Left spot clean"
+- Trust score auto-updates — 5★ = +3, 4★ = +2, 3★ = +1, 2★ = -1, 1★ = -3
+- Duplicate prevention — one rating per person per ride or booking
+- My Ratings page — received ratings with breakdown chart, given ratings tab, filter by Carpool/Parking
 
 **Endpoints:**
 
@@ -231,8 +227,45 @@ POST   /api/ratings
 GET    /api/ratings/received
 GET    /api/ratings/given
 GET    /api/ratings/check
-GET    /api/ratings/user/:id    (public)
+GET    /api/ratings/user/:id
 ```
+
+---
+
+### In-Ride & Booking Chat (F-09)
+
+Private messaging system for carpool groups and parking bookings:
+
+- **Carpool chat** — driver and all confirmed passengers can message each other per ride
+- **Booking chat** — student and homeowner can message each other per booking
+- Polling every 5 seconds — no websocket dependency, works on existing infrastructure
+- Messages grouped by date with separators
+- My messages on right (teal for carpool, dark for parking), others on left with avatar and name
+- Unread message badge on chat button — count fetched in bulk on page load
+- Messages marked as read on open
+- Auto-scroll to latest message on open and on new message
+- Participant avatars shown in chat header
+- Authorization enforced on backend — only ride/booking members can read or write
+- Enter to send, Shift+Enter for new line, auto-expanding textarea
+
+**Endpoints:**
+
+```
+GET    /api/messages/:contextType/:contextId
+POST   /api/messages/:contextType/:contextId
+GET    /api/messages/unread/:contextType/:contextId
+POST   /api/messages/unread/bulk
+```
+
+---
+
+### Anonymous Incident Reporting (F-10)
+
+- Categories: Harassment, Unsafe Driving, Theft, Suspicious Activity, Other
+- GPS auto-captured, fully anonymous submission
+- Admin table with status management (Pending → Reviewed → Resolved)
+
+**Endpoints:** `POST /api/incidents`, `GET /api/incidents` (admin), `PATCH /api/incidents/:id/status` (admin)
 
 ---
 
@@ -243,16 +276,6 @@ GET    /api/ratings/user/:id    (public)
 - Pulsing animation when contacts are set
 
 **Endpoints:** `POST /api/sos/trigger`, `GET/POST /api/sos/contacts`, `DELETE /api/sos/contacts/:id`
-
----
-
-### Anonymous Incident Reporting (F-14)
-
-- Categories: Harassment, Unsafe Driving, Theft, Suspicious Activity, Other
-- GPS auto-captured, anonymous submission
-- Admin table with status management (Pending → Reviewed → Resolved)
-
-**Endpoints:** `POST /api/incidents`, `GET /api/incidents` (admin), `PATCH /api/incidents/:id/status` (admin)
 
 ---
 
@@ -301,19 +324,19 @@ cd client && npm install && npm run dev
 
 ## Sprint Plan
 
-| Sprint | Theme               | Status                             |
-| ------ | ------------------- | ---------------------------------- |
-| S1     | Parking Marketplace | ✅ Complete                        |
-| S2     | Carpooling Network  | 🔲 In Progress (3/5 done)          |
-| S3     | Safety & Trust      | 🔲 Partial (F-11, F-14, F-15 done) |
-| S4     | Smart Features      | 🔲 Pending                         |
+| Sprint | Theme               | Status         |
+| ------ | ------------------- | -------------- |
+| S1     | Parking Marketplace | ✅ Complete    |
+| S2     | Carpooling Network  | ✅ Complete    |
+| S3     | Safety & Trust      | 🔲 In Progress |
+| S4     | Smart Features      | 🔲 Pending     |
 
-| Teammate | Sprint 1          | Sprint 2       | Sprint 3          | Sprint 4    |
-| -------- | ----------------- | -------------- | ----------------- | ----------- |
-| Shahriar | F-01 ✅           | F-08 ✅        | F-11 ✅ + F-15 ✅ | F-17        |
-| Sushmita | F-02 ✅ + F-05 ✅ | F-06 ✅        | F-13              | F-16        |
-| Fauzia   | F-03 ✅           | F-07 ✅ + F-10 | F-12              | F-19 + F-20 |
-| Tasnuva  | F-04 ✅           | F-09 ✅        | F-14 ✅           | F-18        |
+| Teammate | Sprint 1          | Sprint 2          | Sprint 3          | Sprint 4    |
+| -------- | ----------------- | ----------------- | ----------------- | ----------- |
+| Shahriar | F-01 ✅           | F-08 ✅           | F-11 ✅ + F-15 ✅ | F-17        |
+| Sushmita | F-02 ✅ + F-05 ✅ | F-06 ✅           | F-14              | F-16        |
+| Fauzia   | F-03 ✅           | F-07 ✅ + F-09 ✅ | F-12 + F-13       | F-19 + F-20 |
+| Tasnuva  | F-04 ✅           | F-10 ✅           | F-18              | F-18        |
 
 ---
 
