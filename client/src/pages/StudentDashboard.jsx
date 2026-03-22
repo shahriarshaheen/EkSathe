@@ -14,11 +14,13 @@ import DashboardLayout from "../components/ui/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 
+// FIX: added My Ratings to navItems so students can find the ratings page
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
   { path: "/dashboard/parking", label: "Find Parking", icon: MapPin },
   { path: "/dashboard/carpool", label: "Carpooling", icon: Car },
   { path: "/dashboard/sos", label: "SOS & Safety", icon: Shield },
+  { path: "/dashboard/ratings", label: "My Ratings", icon: Star },
   {
     path: "/dashboard/notifications",
     label: "Notifications",
@@ -80,14 +82,12 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const firstName = user?.name?.split(" ")[0] || "there";
 
-  // Fix 20 — fetch real rides shared count
   const [ridesShared, setRidesShared] = useState(0);
 
   useEffect(() => {
     api
       .get("/carpool/my")
       .then((r) => {
-        // Only count active rides — exclude cancelled and completed
         const posted =
           r.data.data.posted?.filter(
             (r) => r.status !== "cancelled" && r.status !== "completed",
@@ -114,7 +114,7 @@ const StudentDashboard = () => {
           </p>
         </div>
 
-        {/* Stats — Fix 20: real rides shared count */}
+        {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard label="Saved Spots" value="0" sub="No favorites yet" />
           <StatCard
@@ -174,7 +174,7 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        {/* Fix 20 — active carpool banner */}
+        {/* Active carpool banner */}
         {ridesShared > 0 && (
           <div
             onClick={() => navigate("/dashboard/carpool/my-rides")}
@@ -237,10 +237,19 @@ const StudentDashboard = () => {
               Your Profile
             </h3>
             <div className="flex flex-col items-center text-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-teal-50 border-2 border-teal-100 flex items-center justify-center">
-                <span className="text-xl font-bold text-teal-600">
-                  {user?.name?.[0]?.toUpperCase()}
-                </span>
+              {/* FIX: show real photo if exists */}
+              <div className="w-14 h-14 rounded-full bg-teal-50 border-2 border-teal-100 flex items-center justify-center overflow-hidden">
+                {user?.photoUrl ? (
+                  <img
+                    src={user.photoUrl}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xl font-bold text-teal-600">
+                    {user?.name?.[0]?.toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <p className="font-semibold text-stone-800 text-sm">
@@ -262,6 +271,13 @@ const StudentDashboard = () => {
                   {user?.trustScore ?? 0}
                 </p>
               </div>
+              {/* FIX: link to ratings page */}
+              <button
+                onClick={() => navigate("/dashboard/ratings")}
+                className="w-full text-xs font-semibold text-stone-500 hover:text-teal-600 transition-colors py-1"
+              >
+                View my ratings →
+              </button>
               <div className="flex items-center gap-1.5 text-xs text-stone-400">
                 <Clock className="w-3 h-3" />
                 Member since{" "}

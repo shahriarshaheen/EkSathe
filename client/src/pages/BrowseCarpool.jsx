@@ -10,7 +10,6 @@ import {
   Clock,
   Users,
   ChevronDown,
-  SlidersHorizontal,
 } from "lucide-react";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -34,17 +33,17 @@ const UNIVERSITIES = [
 
 // Map university names to preset destination keywords
 const UNI_KEYWORDS = {
-  NSU: ["bashundhara", "nsu", "north south"],
-  BUET: ["palashi", "buet"],
-  "Dhaka University": ["nilkhet", "dhaka university", "du"],
-  "BRAC University": ["mohakhali", "brac"],
-  IUB: ["bashundhara", "iub", "independent"],
-  "East West University": ["aftabnagar", "east west"],
-  MIST: ["mirpur", "mist"],
-  UIU: ["satarkul", "uiu", "united"],
-  AIUB: ["kuratoli", "aiub"],
-  "Jahangirnagar University": ["savar", "jahangirnagar"],
-  "Stamford University": ["siddeswari", "stamford"],
+  nsu: ["bashundhara", "north south"],
+  buet: ["palashi", "buet"],
+  du: ["nilkhet", "dhaka university"],
+  bracu: ["mohakhali", "brac"],
+  iub: ["bashundhara", "independent"],
+  ewu: ["aftabnagar", "east west"],
+  mist: ["mirpur", "mist"],
+  uiu: ["satarkul", "united international"],
+  aiub: ["kuratoli", "american international"],
+  ju: ["savar", "jahangirnagar"],
+  stamford: ["siddeswari", "stamford"],
 };
 
 function SeatDots({ total, available }) {
@@ -420,13 +419,12 @@ export default function BrowseCarpool() {
     }
   });
 
-  // Get user's university name from their profile
-  const userUniName = user?.university
-    ? UNIVERSITIES.find(
-        (u) =>
-          u.toLowerCase().includes(user.university?.toLowerCase?.()) ||
-          user.university?.toLowerCase?.().includes(u.toLowerCase()),
-      )
+  // FIX: user.university is already the university ID (e.g. "nsu", "buet")
+  // Use it directly to look up keywords — no string matching needed
+  const uniId = user?.university || null;
+  const userUniName = uniId
+    ? UNIVERSITIES.find((u) => u.toLowerCase().includes(uniId.toLowerCase())) ||
+      uniId.toUpperCase()
     : null;
 
   useEffect(() => {
@@ -475,9 +473,9 @@ export default function BrowseCarpool() {
   });
 
   // Suggested rides — match user's university destination keywords
-  const suggestedRoutes = userUniName
+  const suggestedRoutes = uniId
     ? filteredRoutes.filter((r) => {
-        const keywords = UNI_KEYWORDS[userUniName] || [];
+        const keywords = UNI_KEYWORDS[uniId] || [];
         const dest = (
           r.destination.name +
           " " +

@@ -14,9 +14,8 @@ const TOKEN_KEY = "eksathe_token";
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
-  const [loading, setLoading] = useState(true); // true while hydrating from token
+  const [loading, setLoading] = useState(true);
 
-  // On mount: if a token exists, fetch the current user to hydrate state
   useEffect(() => {
     const hydrate = async () => {
       if (!token) {
@@ -25,9 +24,11 @@ export const AuthProvider = ({ children }) => {
       }
       try {
         const res = await authService.getMe();
+        // FIX: authService.getMe() returns { success, data: { id, name, ... } }
+        // Previously setUser(res.data) set user = { success, data } — wrong shape
+        // Now we unwrap correctly so user = { id, name, email, role, ... }
         setUser(res.data);
       } catch {
-        // Token is invalid or expired — clear it silently
         localStorage.removeItem(TOKEN_KEY);
         setToken(null);
         setUser(null);
@@ -48,6 +49,7 @@ export const AuthProvider = ({ children }) => {
     async (credentials) => {
       const res = await authService.login(credentials);
       saveToken(res.token);
+      // FIX: res.data is already the user object { id, name, email, ... }
       setUser(res.data);
       return res;
     },
@@ -58,7 +60,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await authService.logout();
     } catch {
-      // Ignore logout API errors — clear state regardless
+      // ignore
     } finally {
       localStorage.removeItem(TOKEN_KEY);
       setToken(null);

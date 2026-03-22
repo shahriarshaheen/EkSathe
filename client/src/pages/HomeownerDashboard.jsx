@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Home,
@@ -9,19 +10,18 @@ import {
   CheckCircle,
   PlusCircle,
   Banknote,
+  MessageCircle,
 } from "lucide-react";
 import DashboardLayout from "../components/ui/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
+import api from "../lib/api";
 
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
   { path: "/dashboard/my-listings", label: "My Listings", icon: ParkingSquare },
-  { path: "/dashboard/bookings", label: "Bookings", icon: Users, soon: true },
-  {
-    path: "/dashboard/earnings",
-    label: "Earnings",
-    icon: Banknote,
-  },
+  // FIX: removed soon:true so homeowners can access bookings page
+  { path: "/dashboard/bookings", label: "Bookings", icon: Users },
+  { path: "/dashboard/earnings", label: "Earnings", icon: Banknote },
   {
     path: "/dashboard/notifications",
     label: "Notifications",
@@ -52,6 +52,45 @@ const HomeownerDashboard = () => {
   const navigate = useNavigate();
   const firstName = user?.name?.split(" ")[0] || "there";
 
+  // FIX: fetch real stats instead of hardcoded zeros
+  const [stats, setStats] = useState({
+    activeListings: 0,
+    totalBookings: 0,
+    earnings: 0,
+  });
+
+  useEffect(() => {
+    // Fetch listings count
+    api
+      .get("/parking/my/listings")
+      .then((r) => {
+        const listings = r.data.data || [];
+        setStats((prev) => ({
+          ...prev,
+          activeListings: listings.filter((l) => l.isActive !== false).length,
+        }));
+      })
+      .catch(() => {});
+
+    // Fetch bookings and compute earnings
+    api
+      .get("/bookings/homeowner")
+      .then((r) => {
+        const bookings = r.data.data || [];
+        const confirmed = bookings.filter((b) => b.status === "confirmed");
+        const earnings = confirmed.reduce(
+          (sum, b) => sum + (b.totalPrice || 0),
+          0,
+        );
+        setStats((prev) => ({
+          ...prev,
+          totalBookings: bookings.length,
+          earnings,
+        }));
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <DashboardLayout navItems={navItems}>
       <div className="p-6 lg:p-8 max-w-5xl mx-auto">
@@ -74,28 +113,30 @@ const HomeownerDashboard = () => {
           </button>
         </div>
 
-        {/* Stats */}
+        {/* Stats — FIX: now showing real data */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
             label="Active Listings"
-            value="0"
-            sub="No spots listed yet"
+            value={stats.activeListings}
+            sub={
+              stats.activeListings > 0 ? "View listings" : "No spots listed yet"
+            }
             icon={ParkingSquare}
             accent="text-amber-600"
             bg="bg-amber-50"
           />
           <StatCard
             label="Total Bookings"
-            value="0"
-            sub="This month"
+            value={stats.totalBookings}
+            sub="All time"
             icon={Users}
             accent="text-blue-600"
             bg="bg-blue-50"
           />
           <StatCard
             label="Earnings"
-            value="৳0"
-            sub="All time"
+            value={`৳${stats.earnings}`}
+            sub="Confirmed bookings"
             icon={Banknote}
             accent="text-green-600"
             bg="bg-green-50"
@@ -110,29 +151,64 @@ const HomeownerDashboard = () => {
           />
         </div>
 
-        {/* Get started banner */}
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-8">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <ParkingSquare className="w-5 h-5 text-amber-600" />
+        {/* Quick actions banner when bookings exist */}
+        {stats.totalBookings > 0 ? (
+          <div
+            onClick={() => navigate("/dashboard/bookings")}
+            className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 flex items-center justify-between cursor-pointer hover:bg-blue-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+                <MessageCircle className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-blue-800">
+                  You have {stats.totalBookings} booking
+                  {stats.totalBookings !== 1 ? "s" : ""}
+                </p>
+                <p className="text-xs text-blue-600">
+                  Tap to view and chat with students
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-amber-900 mb-1">
-                List your first parking spot
-              </h3>
-              <p className="text-sm text-amber-700 leading-relaxed">
-                Turn your unused driveway or garage into a steady income.
-                Students near your area are actively looking for parking.
-              </p>
-              <button
-                onClick={() => navigate("/dashboard/create-listing")}
-                className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-900 flex items-center gap-1 transition-colors"
-              >
-                Get started <span>→</span>
-              </button>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#2563eb"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
+        ) : (
+          /* Get started banner when no listings */
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <ParkingSquare className="w-5 h-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900 mb-1">
+                  List your first parking spot
+                </h3>
+                <p className="text-sm text-amber-700 leading-relaxed">
+                  Turn your unused driveway or garage into a steady income.
+                  Students near your area are actively looking for parking.
+                </p>
+                <button
+                  onClick={() => navigate("/dashboard/create-listing")}
+                  className="mt-3 text-sm font-semibold text-amber-700 hover:text-amber-900 flex items-center gap-1 transition-colors"
+                >
+                  Get started <span>→</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -192,10 +268,18 @@ const HomeownerDashboard = () => {
               Your Profile
             </h3>
             <div className="flex flex-col items-center text-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-amber-50 border-2 border-amber-100 flex items-center justify-center">
-                <span className="text-xl font-bold text-amber-600">
-                  {user?.name?.[0]?.toUpperCase()}
-                </span>
+              <div className="w-14 h-14 rounded-full bg-amber-50 border-2 border-amber-100 flex items-center justify-center overflow-hidden">
+                {user?.photoUrl ? (
+                  <img
+                    src={user.photoUrl}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xl font-bold text-amber-600">
+                    {user?.name?.[0]?.toUpperCase()}
+                  </span>
+                )}
               </div>
               <div>
                 <p className="font-semibold text-stone-800 text-sm">

@@ -1,7 +1,6 @@
 import CarpoolRoute from "../models/CarpoolRoute.js";
 import UNIVERSITY_ROUTES from "../config/universityRoutes.js";
 
-// Auto-complete rides that are past their departure time
 const autoCompleteExpiredRides = async () => {
   await CarpoolRoute.updateMany(
     {
@@ -12,12 +11,10 @@ const autoCompleteExpiredRides = async () => {
   );
 };
 
-// GET /api/carpool/presets
 export const getPresetRoutes = (req, res) => {
   res.json({ success: true, data: UNIVERSITY_ROUTES });
 };
 
-// GET /api/carpool/routes
 export const getRoutes = async (req, res) => {
   try {
     const { genderSafe, presetRouteId } = req.query;
@@ -40,7 +37,6 @@ export const getRoutes = async (req, res) => {
   }
 };
 
-// POST /api/carpool/routes
 export const createRoute = async (req, res) => {
   try {
     const {
@@ -64,12 +60,10 @@ export const createRoute = async (req, res) => {
     }
 
     if (new Date(departureTime) <= new Date()) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Departure time must be in the future.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Departure time must be in the future.",
+      });
     }
 
     const route = await CarpoolRoute.create({
@@ -95,7 +89,6 @@ export const createRoute = async (req, res) => {
   }
 };
 
-// POST /api/carpool/routes/:id/join
 export const joinRoute = async (req, res) => {
   try {
     const route = await CarpoolRoute.findById(req.params.id);
@@ -124,15 +117,18 @@ export const joinRoute = async (req, res) => {
         .status(400)
         .json({ success: false, message: "No seats available." });
 
-    // Double booking — only check against future rides
     const deptTime = new Date(route.departureTime);
     const windowStart = new Date(deptTime.getTime() - 2 * 60 * 60 * 1000);
     const windowEnd = new Date(deptTime.getTime() + 2 * 60 * 60 * 1000);
+    const now = new Date();
 
+    // FIX: removed duplicate $gte key — now correctly checks window AND future-only
+    // Previous code had { $gte: new Date(), $gte: windowStart } which silently
+    // dropped the first $gte, making windowStart the only filter (ignoring future check)
     const conflictingRide = await CarpoolRoute.findOne({
       $or: [{ driver: req.user.id }, { passengers: req.user.id }],
       status: { $in: ["open", "full"] },
-      departureTime: { $gte: new Date(), $gte: windowStart, $lte: windowEnd },
+      departureTime: { $gte: windowStart, $lte: windowEnd, $gt: now },
       _id: { $ne: route._id },
     });
 
@@ -161,7 +157,6 @@ export const joinRoute = async (req, res) => {
   }
 };
 
-// DELETE /api/carpool/routes/:id/leave
 export const leaveRoute = async (req, res) => {
   try {
     const route = await CarpoolRoute.findById(req.params.id);
@@ -200,10 +195,8 @@ export const leaveRoute = async (req, res) => {
   }
 };
 
-// GET /api/carpool/my
 export const getMyRides = async (req, res) => {
   try {
-    // Auto-complete expired rides before fetching
     await autoCompleteExpiredRides();
 
     const [posted, joined] = await Promise.all([
@@ -221,7 +214,6 @@ export const getMyRides = async (req, res) => {
   }
 };
 
-// PATCH /api/carpool/routes/:id/cancel
 export const cancelRoute = async (req, res) => {
   try {
     const route = await CarpoolRoute.findById(req.params.id);
@@ -254,7 +246,6 @@ export const cancelRoute = async (req, res) => {
   }
 };
 
-// GET /api/carpool/admin/routes
 export const adminGetAllRoutes = async (req, res) => {
   try {
     await autoCompleteExpiredRides();
@@ -273,7 +264,6 @@ export const adminGetAllRoutes = async (req, res) => {
   }
 };
 
-// PATCH /api/carpool/admin/routes/:id/cancel
 export const adminCancelRoute = async (req, res) => {
   try {
     const route = await CarpoolRoute.findById(req.params.id);
