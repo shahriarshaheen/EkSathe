@@ -2,7 +2,6 @@ import Rating from "../models/Rating.js";
 import User from "../models/User.js";
 import CarpoolRoute from "../models/CarpoolRoute.js";
 
-// ── SUBMIT RATING ─────────────────────────────────────────────
 export const submitRating = async (req, res) => {
   try {
     const { ratedUserId, contextType, contextId, ratedRole, score, comment } =
@@ -24,7 +23,6 @@ export const submitRating = async (req, res) => {
         .json({ success: false, message: "You cannot rate yourself." });
     }
 
-    // Verify the rater was actually part of this carpool/booking
     if (contextType === "carpool") {
       const ride = await CarpoolRoute.findById(contextId);
       if (!ride) {
@@ -44,34 +42,33 @@ export const submitRating = async (req, res) => {
           .json({ success: false, message: "You were not part of this ride." });
       }
 
-      // Verify rated user was also part of this ride
       const ratedIsDriver = ride.driver.toString() === ratedUserId;
       const ratedIsPassenger = ride.passengers.some(
         (p) => p.toString() === ratedUserId,
       );
 
       if (!ratedIsDriver && !ratedIsPassenger) {
-        return res
-          .status(403)
-          .json({
-            success: false,
-            message: "The rated user was not part of this ride.",
-          });
+        return res.status(403).json({
+          success: false,
+          message: "The rated user was not part of this ride.",
+        });
       }
     }
 
-    // Check for duplicate rating
-    const existing = await Rating.findOne({ rater: req.user.id, contextId });
+    // FIX: duplicate check must include `rated` field so a driver can rate
+    // multiple passengers — one rating per rater+contextId+rated combination
+    const existing = await Rating.findOne({
+      rater: req.user.id,
+      contextId,
+      rated: ratedUserId,
+    });
     if (existing) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "You have already rated someone for this ride/booking.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "You have already rated this person for this ride/booking.",
+      });
     }
 
-    // Save rating
     const rating = await Rating.create({
       rater: req.user.id,
       rated: ratedUserId,
@@ -82,18 +79,8 @@ export const submitRating = async (req, res) => {
       comment: comment?.trim() || "",
     });
 
-    // Update trust score
-    // 5★ = +3, 4★ = +2, 3★ = +1, 2★ = -1, 1★ = -3
     const trustDelta =
-      score === 5
-        ? 3
-        : score === 4
-          ? 2
-          : score === 3
-            ? 1
-            : score === 2
-              ? -1
-              : -3;
+      score === 5 ? 3 : score === 4 ? 2 : score === 3 ? 1 : score === 2 ? -1 : -3;
     const ratedUser = await User.findById(ratedUserId);
 
     if (ratedUser) {
@@ -104,26 +91,20 @@ export const submitRating = async (req, res) => {
       await ratedUser.save();
     }
 
-    const populated = await rating.populate(
-      "rater",
-      "name photoUrl university",
-    );
+    const populated = await rating.populate("rater", "name photoUrl university");
     return res.status(201).json({ success: true, data: populated });
   } catch (err) {
     if (err.code === 11000) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "You have already submitted a rating for this ride/booking.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "You have already submitted a rating for this ride/booking.",
+      });
     }
     console.error("submitRating error:", err);
     return res.status(500).json({ success: false, message: "Server error." });
   }
 };
 
-// ── GET RATINGS RECEIVED BY LOGGED-IN USER ────────────────────
 export const getReceivedRatings = async (req, res) => {
   try {
     const ratings = await Rating.find({ rated: req.user.id })
@@ -131,9 +112,7 @@ export const getReceivedRatings = async (req, res) => {
       .sort({ createdAt: -1 });
 
     const avg = ratings.length
-      ? (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(
-          1,
-        )
+      ? (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(1)
       : null;
 
     const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
@@ -151,7 +130,6 @@ export const getReceivedRatings = async (req, res) => {
   }
 };
 
-// ── GET RATINGS GIVEN BY LOGGED-IN USER ──────────────────────
 export const getGivenRatings = async (req, res) => {
   try {
     const ratings = await Rating.find({ rater: req.user.id })
@@ -165,7 +143,6 @@ export const getGivenRatings = async (req, res) => {
   }
 };
 
-// ── GET PUBLIC RATINGS FOR ANY USER ──────────────────────────
 export const getPublicRatings = async (req, res) => {
   try {
     const { id } = req.params;
@@ -176,9 +153,7 @@ export const getPublicRatings = async (req, res) => {
       .limit(20);
 
     const avg = ratings.length
-      ? (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(
-          1,
-        )
+      ? (ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length).toFixed(1)
       : null;
 
     const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
@@ -196,7 +171,6 @@ export const getPublicRatings = async (req, res) => {
   }
 };
 
-// ── CHECK IF ALREADY RATED THIS CONTEXT ──────────────────────
 export const checkRated = async (req, res) => {
   try {
     const { contextId } = req.query;
