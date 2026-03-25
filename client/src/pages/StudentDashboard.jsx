@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 import {
   MapPin,
   Car,
@@ -11,13 +14,31 @@ import {
   Clock,
   CalendarDays,
   ShieldAlert,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import DashboardLayout from "../components/ui/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 
-// FIX: added My Bookings, My Ratings, Report Incident to student nav
-// removed from MyBookingsPage navItems (each page should have role-correct nav)
+// Fix Leaflet marker icons
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+const tealIcon = new L.Icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [20, 33],
+  iconAnchor: [10, 33],
+  popupAnchor: [1, -28],
+  shadowSize: [33, 33],
+});
+
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
   { path: "/dashboard/parking", label: "Find Parking", icon: MapPin },
@@ -38,6 +59,184 @@ const navItems = [
   },
 ];
 
+// ── Slides ────────────────────────────────────────────────────
+const STUDENT_SLIDES = [
+  {
+    eyebrow: "Parking near you",
+    title: "Find spots near your campus",
+    sub: "From ৳40/day · Verified hosts · Book instantly",
+    cta: "Find a spot",
+    route: "/dashboard/parking",
+    bg: "from-teal-700 to-teal-900",
+    icon: "🅿️",
+  },
+  {
+    eyebrow: "Daily commute",
+    title: "Students going your route — seats available",
+    sub: "Split fuel costs · Verified drivers · Safe rides",
+    cta: "Browse carpools",
+    route: "/dashboard/carpool",
+    bg: "from-stone-800 to-stone-950",
+    icon: "🚗",
+  },
+  {
+    eyebrow: "Campus safety",
+    title: "SOS ready — one tap sends your location",
+    sub: "Add emergency contacts · Protect every commute",
+    cta: "Set up now",
+    route: "/dashboard/sos",
+    bg: "from-blue-800 to-blue-950",
+    icon: "🛡️",
+  },
+];
+
+// ── PromoBanner ───────────────────────────────────────────────
+const PromoBanner = ({ slides }) => {
+  const navigate = useNavigate();
+  const [cur, setCur] = useState(0);
+  const [animating, setAnimating] = useState(false);
+  const timerRef = useRef(null);
+
+  const startTimer = () => {
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setAnimating(true);
+      setTimeout(() => {
+        setCur((c) => (c + 1) % slides.length);
+        setAnimating(false);
+      }, 200);
+    }, 4200);
+  };
+
+  useEffect(() => {
+    startTimer();
+    return () => clearInterval(timerRef.current);
+  }, []);
+
+  const goTo = (n) => {
+    setAnimating(true);
+    setTimeout(() => {
+      setCur((n + slides.length) % slides.length);
+      setAnimating(false);
+    }, 150);
+    startTimer();
+  };
+
+  const s = slides[cur];
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden mb-6 h-[130px] select-none">
+      {/* Background */}
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${s.bg} transition-all duration-500`}
+      />
+
+      {/* Subtle grid texture */}
+      <div
+        className="absolute inset-0 opacity-5"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, white 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
+        }}
+      />
+
+      {/* Content */}
+      <div
+        className={`relative h-full flex items-center px-6 transition-opacity duration-200 ${animating ? "opacity-0" : "opacity-100"}`}
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-1">
+            {s.eyebrow}
+          </p>
+          <p className="text-base font-bold text-white leading-snug mb-2 pr-4">
+            {s.title}
+          </p>
+          <p className="text-xs text-white/50 mb-3 hidden sm:block">{s.sub}</p>
+          <button
+            onClick={() => navigate(s.route)}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 border border-white/20 px-3 py-1.5 rounded-full transition-colors"
+          >
+            {s.cta}
+            <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+        <div className="text-4xl flex-shrink-0 opacity-30 mr-2 hidden sm:block">
+          {s.icon}
+        </div>
+      </div>
+
+      {/* Prev / Next */}
+      <button
+        onClick={() => goTo(cur - 1)}
+        className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+      >
+        <ChevronLeft className="w-3 h-3 text-white" />
+      </button>
+      <button
+        onClick={() => goTo(cur + 1)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+      >
+        <ChevronRight className="w-3 h-3 text-white" />
+      </button>
+
+      {/* Dots */}
+      <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            className={`rounded-full transition-all duration-300 ${i === cur ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/30 hover:bg-white/50"}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── MiniMap ───────────────────────────────────────────────────
+const MiniMap = ({ onExpand }) => {
+  const defaultCenter = [23.8103, 90.4125];
+  return (
+    <div
+      className="rounded-2xl overflow-hidden border border-stone-200 mb-6 relative"
+      style={{ height: 160 }}
+    >
+      <MapContainer
+        center={defaultCenter}
+        zoom={13}
+        style={{ height: "100%", width: "100%" }}
+        zoomControl={false}
+        scrollWheelZoom={false}
+        dragging={false}
+        doubleClickZoom={false}
+        attributionControl={false}
+      >
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+        <Marker position={defaultCenter} icon={tealIcon}>
+          <Popup>
+            <span style={{ fontSize: 12, fontWeight: 500 }}>
+              Your campus area
+            </span>
+          </Popup>
+        </Marker>
+      </MapContainer>
+      {/* Overlay label */}
+      <div className="absolute top-2.5 left-2.5 z-[999] bg-white/90 backdrop-blur-sm border border-stone-200 rounded-lg px-2.5 py-1 shadow-sm">
+        <p className="text-xs font-semibold text-stone-700">Nearby parking</p>
+      </div>
+      {/* Expand button */}
+      <button
+        onClick={onExpand}
+        className="absolute bottom-2.5 right-2.5 z-[999] bg-white/90 backdrop-blur-sm border border-stone-200 rounded-lg px-2.5 py-1 shadow-sm text-xs font-semibold text-teal-700 hover:bg-teal-50 transition-colors flex items-center gap-1"
+      >
+        View full map <ChevronRight className="w-3 h-3" />
+      </button>
+    </div>
+  );
+};
+
+// ── Sub-components ────────────────────────────────────────────
 const StatCard = ({ label, value, sub, accent }) => (
   <div className="bg-white rounded-xl border border-stone-200 p-5 flex flex-col gap-1">
     <p className="text-xs font-medium text-stone-400 uppercase tracking-wide">
@@ -86,6 +285,7 @@ const ActivityRow = ({ icon: Icon, text, time, color }) => (
   </div>
 );
 
+// ── Main Dashboard ────────────────────────────────────────────
 const StudentDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -112,16 +312,18 @@ const StudentDashboard = () => {
   return (
     <DashboardLayout navItems={navItems}>
       <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-        <div className="mb-8">
+        {/* Header */}
+        <div className="mb-6">
           <h1 className="text-2xl font-bold text-stone-900 tracking-tight">
-            Good morning, {firstName} 👋
+            Good morning, {firstName}
           </h1>
           <p className="text-stone-500 text-sm mt-1">
             Here's what's happening around campus today.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard label="Saved Spots" value="0" sub="No favorites yet" />
           <StatCard
             label="Rides Shared"
@@ -143,6 +345,13 @@ const StudentDashboard = () => {
           />
         </div>
 
+        {/* Promo Banner */}
+        <PromoBanner slides={STUDENT_SLIDES} />
+
+        {/* Mini Map */}
+        <MiniMap onExpand={() => navigate("/dashboard/parking")} />
+
+        {/* Quick Actions */}
         <div className="mb-8">
           <h2 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-4">
             Quick Actions
@@ -179,6 +388,7 @@ const StudentDashboard = () => {
           </div>
         </div>
 
+        {/* Active rides banner */}
         {ridesShared > 0 && (
           <div
             onClick={() => navigate("/dashboard/carpool/my-rides")}
@@ -196,21 +406,11 @@ const StudentDashboard = () => {
                 <p className="text-xs text-teal-600">Tap to view your rides</p>
               </div>
             </div>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#0d9488"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            <ChevronRight className="w-4 h-4 text-teal-600" />
           </div>
         )}
 
+        {/* Activity + Profile */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-white rounded-xl border border-stone-200 p-5">
             <h3 className="text-sm font-semibold text-stone-700 mb-4">
