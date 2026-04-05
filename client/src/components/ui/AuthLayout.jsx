@@ -1,24 +1,40 @@
 import { MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
-// Shared layout for all auth pages.
-// Left: branding panel (hidden on mobile). Right: form content.
 const AuthLayout = ({ children, title, subtitle }) => {
   return (
     <div className="min-h-screen bg-stone-50 flex">
       {/* ── Branding panel — visible on lg+ ── */}
-      <div className="hidden lg:flex lg:w-[420px] xl:w-[480px] flex-shrink-0 bg-stone-900 flex-col justify-between p-12 relative overflow-hidden">
-        {/* Subtle grid texture */}
+      <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] flex-shrink-0 bg-stone-900 flex-col justify-between p-12 relative overflow-hidden">
+        {/* Dot texture */}
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
-            backgroundSize: "32px 32px",
+            backgroundImage:
+              "radial-gradient(circle, #fff 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+
+        {/* Teal glow top-right */}
+        <div
+          className="absolute -top-20 -right-20 w-72 h-72 rounded-full opacity-10 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, #0d9488 0%, transparent 70%)",
+          }}
+        />
+
+        {/* Teal glow bottom-left */}
+        <div
+          className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full opacity-10 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, #0d9488 0%, transparent 70%)",
           }}
         />
 
         {/* Logo */}
-        <Link to="/" className="relative flex items-center gap-2 group">
+        <Link to="/" className="relative flex items-center gap-2 z-10">
           <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
             <MapPin className="w-4 h-4 text-stone-900" strokeWidth={2.5} />
           </div>
@@ -27,26 +43,33 @@ const AuthLayout = ({ children, title, subtitle }) => {
           </span>
         </Link>
 
-        {/* Tagline block */}
-        <div className="relative">
-          <p className="text-stone-400 text-sm uppercase tracking-[0.2em] font-medium mb-4">
-            Smart Campus Mobility
-          </p>
-          <h2 className="text-white text-3xl xl:text-4xl font-bold leading-tight tracking-tight">
-            Move smarter.
-            <br />
-            Park better.
-            <br />
-            <span className="text-teal-400">Together.</span>
-          </h2>
-          <p className="mt-6 text-stone-400 text-sm leading-relaxed max-w-[280px]">
-            EkSathe connects students and homeowners to solve campus parking and
-            carpooling — safely and simply.
-          </p>
+        {/* Animation + tagline — center of panel */}
+        <div className="relative z-10 flex flex-col items-center gap-6">
+          <div className="w-full max-w-sm">
+            <DotLottieReact
+              src="/carpool.lottie"
+              loop
+              autoplay
+              style={{ width: "100%", height: "auto" }}
+            />
+          </div>
+
+          <div className="text-center">
+            <p className="text-stone-400 text-xs uppercase tracking-[0.2em] font-medium mb-3">
+              Smart Campus Mobility
+            </p>
+            <h2 className="text-white text-2xl xl:text-3xl font-bold leading-tight tracking-tight">
+              Move smarter
+              <br />
+              Park better
+              <br />
+              <span className="text-teal-400">Together</span>
+            </h2>
+          </div>
         </div>
 
-        {/* Footer note */}
-        <p className="relative text-stone-600 text-xs">
+        {/* Footer */}
+        <p className="relative text-stone-600 text-xs z-10">
           © {new Date().getFullYear()} EkSathe. All rights reserved.
         </p>
       </div>
@@ -67,7 +90,6 @@ const AuthLayout = ({ children, title, subtitle }) => {
         </Link>
 
         <div className="w-full max-w-[400px]">
-          {/* Page title */}
           {(title || subtitle) && (
             <div className="mb-8">
               {title && (
@@ -82,7 +104,6 @@ const AuthLayout = ({ children, title, subtitle }) => {
               )}
             </div>
           )}
-
           {children}
         </div>
       </div>
