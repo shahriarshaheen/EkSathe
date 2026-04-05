@@ -60,7 +60,7 @@ const navItems = [
   },
 ];
 
-// slide id "carpool" gets the lottie animation instead of emoji
+// slide id "carpool", "parking", "safety" get lottie animations instead of emoji
 const STUDENT_SLIDES = [
   {
     id: "parking",
@@ -70,7 +70,7 @@ const STUDENT_SLIDES = [
     cta: "Find a spot",
     route: "/dashboard/parking",
     bg: "from-teal-700 to-teal-900",
-    icon: "🅿️",
+    icon: null,
   },
   {
     id: "carpool",
@@ -90,7 +90,7 @@ const STUDENT_SLIDES = [
     cta: "Set up now",
     route: "/dashboard/sos",
     bg: "from-blue-800 to-blue-950",
-    icon: "🛡️",
+    icon: null,
   },
 ];
 
@@ -128,11 +128,13 @@ const PromoBanner = ({ slides }) => {
 
   const s = slides[cur];
   const isCarpool = s.id === "carpool";
+  const isParking = s.id === "parking";
+  const isSafety = s.id === "safety";
 
   return (
     <div
       className={`relative rounded-2xl overflow-hidden mb-6 select-none transition-all duration-300 ${
-        isCarpool ? "h-[160px]" : "h-[130px]"
+        isCarpool || isParking || isSafety ? "h-[160px]" : "h-[130px]"
       }`}
     >
       <div
@@ -169,7 +171,7 @@ const PromoBanner = ({ slides }) => {
           </button>
         </div>
 
-        {/* Right side: lottie on carpool slide, emoji on others */}
+        {/* Right side: lottie on carpool/parking/safety slides, emoji on others */}
         <div className="flex-shrink-0 flex items-center justify-center ml-2">
           {isCarpool ? (
             <div
@@ -178,6 +180,30 @@ const PromoBanner = ({ slides }) => {
             >
               <DotLottieReact
                 src="/carpool.lottie"
+                loop
+                autoplay
+                style={{ width: "100%", height: "100%" }}
+              />
+            </div>
+          ) : isParking ? (
+            <div
+              className="hidden sm:block"
+              style={{ width: 160, height: 120, marginRight: -8 }}
+            >
+              <DotLottieReact
+                src="/map-routing.lottie"
+                loop
+                autoplay
+                style={{ width: "100%", height: "100%" }}
+              />
+            </div>
+          ) : isSafety ? (
+            <div
+              className="hidden sm:block"
+              style={{ width: 130, height: 120, marginRight: -8 }}
+            >
+              <DotLottieReact
+                src="/error.lottie"
                 loop
                 autoplay
                 style={{ width: "100%", height: "100%" }}
@@ -282,6 +308,7 @@ const QuickCard = ({
   color,
   onClick,
   lottie,
+  lottieFile,
 }) => (
   <div
     onClick={onClick}
@@ -290,10 +317,10 @@ const QuickCard = ({
     }`}
   >
     {lottie ? (
-      // Tiny lottie thumbnail on the carpool quick card
+      // Tiny lottie thumbnail on the quick card
       <div className="w-10 h-10 flex-shrink-0 overflow-hidden">
         <DotLottieReact
-          src="/carpool.lottie"
+          src={lottieFile || "/carpool.lottie"}
           loop
           autoplay
           style={{ width: 56, height: 56, marginTop: -8, marginLeft: -8 }}
@@ -406,6 +433,8 @@ const StudentDashboard = () => {
               desc="Discover available spots near your campus or destination."
               color="bg-teal-50 text-teal-600"
               onClick={() => navigate("/dashboard/parking")}
+              lottie
+              lottieFile="/map-routing.lottie"
             />
             {/* Carpool card uses lottie thumbnail */}
             <QuickCard
@@ -422,6 +451,8 @@ const StudentDashboard = () => {
               desc="Offer your seat and help fellow students get to campus."
               color="bg-violet-50 text-violet-600"
               onClick={() => navigate("/dashboard/carpool/post")}
+              lottie
+              lottieFile="/man-waiting-car.lottie"
             />
             <QuickCard
               icon={Shield}
@@ -429,6 +460,8 @@ const StudentDashboard = () => {
               desc="One tap emergency alert — sends your location to trusted contacts."
               color="bg-red-50 text-red-500"
               onClick={() => navigate("/dashboard/sos")}
+              lottie
+              lottieFile="/error.lottie"
             />
           </div>
         </div>
