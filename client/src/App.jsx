@@ -49,6 +49,9 @@ import PaymentSuccessPage from "./features/payment/pages/PaymentSuccessPage";
 import PaymentFailPage from "./features/payment/pages/PaymentFailPage";
 import PaymentCancelPage from "./features/payment/pages/PaymentCancelPage";
 
+//Trip share
+import TripSharePage from './pages/TripSharePage';
+
 const App = () => {
   return (
     <BrowserRouter>
@@ -242,6 +245,9 @@ const App = () => {
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/fail" element={<PaymentFailPage />} />
           <Route path="/payment/cancel" element={<PaymentCancelPage />} />
+          
+          {/* Trip Share*/}
+          <Route path="/share/:token" element={<TripSharePage />} />
 
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

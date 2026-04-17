@@ -19,6 +19,7 @@ import DashboardLayout from "../components/ui/DashboardLayout";
 import CarpoolMapPicker from "../components/CarpoolMapPicker";
 import RatingModal from "../components/RatingModal";
 import ChatModal from "../components/ChatModal";
+import TripShareButton from "../components/TripShareButton";
 import api from "../lib/api";
 
 const TAKA = "\u09F3";
@@ -67,6 +68,11 @@ const RideCard = ({
   const isPast = departure < new Date();
   const rateable = isRateable(ride);
 
+  // Show TripShareButton only on active rides that haven't departed yet
+  const canShareLocation =
+    !isPast &&
+    (ride.status === "open" || ride.status === "full");
+
   const hasRated = (userId) =>
     ratedKeys.has(ratedKey(ride._id, userId?.toString()));
   const allRated =
@@ -78,15 +84,12 @@ const RideCard = ({
       return false;
     })();
 
-  // Build participants list for chat header
   const participants = isDriver
     ? ride.passengers?.map((p) => ({ name: p.name, photoUrl: p.photoUrl })) ||
       []
     : [{ name: ride.driver?.name, photoUrl: ride.driver?.photoUrl }];
 
   const chatTitle = `${ride.origin.area} ${ARROW} ${ride.destination.area}`;
-
-  // Chat only available for active/joined rides (not cancelled)
   const canChat = ride.status !== "cancelled";
 
   return (
@@ -291,9 +294,15 @@ const RideCard = ({
             </div>
           )}
 
+          {/* Trip share button — active rides only */}
+          {canShareLocation && (
+            <div className="mb-3">
+              <TripShareButton rideId={ride._id} />
+            </div>
+          )}
+
           {/* Chat + Map buttons row */}
           <div className="flex gap-2 mb-3">
-            {/* Chat button */}
             {canChat && (
               <button
                 onClick={() => setChatOpen(true)}
@@ -309,7 +318,6 @@ const RideCard = ({
               </button>
             )}
 
-            {/* Map toggle */}
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
@@ -445,7 +453,6 @@ export default function MyRides() {
       );
       setRatedKeys(keys);
 
-      // Fetch unread counts for all rides
       const allRides = [...postedData, ...joinedData];
       if (allRides.length > 0) {
         try {

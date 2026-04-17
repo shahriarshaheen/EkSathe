@@ -10,6 +10,7 @@ import adminRoutes from "./adminRoutes.js";
 import carpoolRoutes from "./carpoolRouter.js";
 import ratingRoutes from "./ratingRoutes.js";
 import messageRoutes from "./messageRoutes.js";
+import tripShareRoutes from './tripShareRoutes.js';
 const router = Router();
 
 router.get("/", (req, res) => {
@@ -27,4 +28,5 @@ router.use("/admin", adminRoutes);
 router.use("/carpool", carpoolRoutes);
 router.use("/ratings", ratingRoutes);
 router.use("/messages", messageRoutes);
+router.use("/tripshare", tripShareRoutes);
 export default router;
