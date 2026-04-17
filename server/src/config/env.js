@@ -3,4 +3,8 @@ import { resolve } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
-dotenv.config({ path: resolve(__dirname, "../../.env") });
+const envPath = resolve(__dirname, "../../.env");
+
+console.log('Loading .env from:', envPath);
+dotenv.config({ path: envPath });
+console.log('CLIENT_URL loaded as:', process.env.CLIENT_URL);
