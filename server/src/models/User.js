@@ -131,6 +131,12 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    // ─── Firebase Push Token ─────────────────────────────────────
+    fcmToken: {
+      type: String,
+      default: null,
+      select: false,
+    },
   },
   {
     timestamps: true,

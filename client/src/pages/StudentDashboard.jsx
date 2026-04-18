@@ -52,12 +52,7 @@ const navItems = [
     label: "Report Incident",
     icon: ShieldAlert,
   },
-  {
-    path: "/dashboard/notifications",
-    label: "Notifications",
-    icon: Bell,
-    soon: true,
-  },
+  { path: "/dashboard/notifications", label: "Notifications", icon: Bell },
 ];
 
 // slide id "carpool", "parking", "safety" get lottie animations instead of emoji

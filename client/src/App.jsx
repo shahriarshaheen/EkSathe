@@ -49,6 +49,9 @@ import PaymentSuccessPage from "./features/payment/pages/PaymentSuccessPage";
 import PaymentFailPage from "./features/payment/pages/PaymentFailPage";
 import PaymentCancelPage from "./features/payment/pages/PaymentCancelPage";
 
+// Notifications
+import NotificationsPage from "./pages/NotificationsPage";
+
 const App = () => {
   return (
     <BrowserRouter>
@@ -234,6 +237,16 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <MyRides />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Notifications */}
+          <Route
+            path="/dashboard/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />

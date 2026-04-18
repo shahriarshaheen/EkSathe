@@ -23,12 +23,7 @@ const navItems = [
   { path: "/dashboard/my-listings", label: "My Listings", icon: ParkingSquare },
   { path: "/dashboard/homeowner-bookings", label: "Bookings", icon: Users },
   { path: "/dashboard/earnings", label: "Earnings", icon: Banknote },
-  {
-    path: "/dashboard/notifications",
-    label: "Notifications",
-    icon: Bell,
-    soon: true,
-  },
+  { path: "/dashboard/notifications", label: "Notifications", icon: Bell },
 ];
 
 // ── Slides ────────────────────────────────────────────────────
