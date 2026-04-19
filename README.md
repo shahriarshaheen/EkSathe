@@ -26,9 +26,9 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 | In-Ride & Booking Chat (F-09)          | ✅ Complete |
 | Anonymous Incident Reporting (F-10)    | ✅ Complete |
 | SOS Panic Button (F-11)                | ✅ Complete |
-| Rider Trust Profile (F-12)             | 🔲 Sprint 3 |
-| Live Trip Sharing (F-13)               | 🔲 Sprint 3 |
-| Route Deviation Alert (F-14)           | 🔲 Sprint 3 |
+| Rider Trust Profile (F-12)             | ✅ Complete |
+| Live Trip Sharing (F-13)               | ✅ Complete |
+| Route Deviation Alert (F-14)           | ✅ Complete |
 | Admin Moderation Dashboard (F-15)      | ✅ Complete |
 | Smart Demand Indicator (F-16)          | 🔲 Sprint 4 |
 | Dynamic Pricing Nudge (F-17)           | 🔲 Sprint 4 |
@@ -333,10 +333,10 @@ cd client && npm install && npm run dev
 
 | Teammate | Sprint 1          | Sprint 2          | Sprint 3          | Sprint 4    |
 | -------- | ----------------- | ----------------- | ----------------- | ----------- |
-| Shahriar | F-01 ✅           | F-08 ✅           | F-11 ✅ + F-15 ✅ | F-17        |
-| Sushmita | F-02 ✅ + F-05 ✅ | F-06 ✅           | F-14              | F-16        |
-| Fauzia   | F-03 ✅           | F-07 ✅ + F-09 ✅ | F-12 + F-13       | F-19 + F-20 |
-| Tasnuva  | F-04 ✅           | F-10 ✅           | F-18              | F-18        |
+| Shahriar | F-01 ✅           | F-08 ✅            | F-11 ✅ + F-15 ✅ | F-17        |
+| Sushmita | F-02 ✅ + F-05 ✅ | F-06 ✅            | F-14              | F-16        |
+| Fauzia   | F-03 ✅           | F-07 ✅ + F-09 ✅  | F-12 + F-13 ✅ | F-19 + F-20 |
+| Tasnuva  | F-04 ✅           | F-10 ✅            | F-18  ✅          | F-18        |
 
 ---
 
