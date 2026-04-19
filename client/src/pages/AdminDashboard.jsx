@@ -4,48 +4,36 @@ import {
   LayoutDashboard,
   Users,
   ParkingSquare,
-  AlertTriangle,
-  Settings,
+  ShieldAlert,
   ShieldCheck,
   TrendingUp,
   Activity,
   UserCheck,
-  UserX,
-  Clock,
-  CheckCircle,
   Car,
+  Banknote,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  UserX,
 } from "lucide-react";
 import DashboardLayout from "../components/ui/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
 
-const navItems = [
+// ── Unified admin nav — used on ALL admin pages ───────────────
+export const ADMIN_NAV = [
   { path: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { path: "/dashboard/verifications", label: "Verifications", icon: UserCheck },
   { path: "/dashboard/admin/carpool", label: "Carpool Rides", icon: Car },
-  { path: "/dashboard/users", label: "Users", icon: Users, soon: true },
-  {
-    path: "/dashboard/listings",
-    label: "Listings",
-    icon: ParkingSquare,
-    soon: true,
-  },
-  {
-    path: "/dashboard/reports",
-    label: "Reports",
-    icon: AlertTriangle,
-    soon: true,
-  },
-  {
-    path: "/dashboard/settings",
-    label: "Settings",
-    icon: Settings,
-    soon: true,
-  },
+  { path: "/admin/incidents", label: "Incidents", icon: ShieldAlert },
+  { path: "/dashboard/admin/users", label: "User Management", icon: Users },
 ];
 
-const StatCard = ({ label, value, sub, icon: Icon, accent, bg, trend }) => (
-  <div className="bg-white rounded-2xl border border-stone-200 p-5 hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
+const StatCard = ({ label, value, sub, icon: Icon, accent, bg, onClick }) => (
+  <div
+    onClick={onClick}
+    className={`bg-white rounded-2xl border border-stone-200 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${onClick ? "cursor-pointer" : ""}`}
+  >
     <div className="flex items-start justify-between mb-3">
       <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
         {label}
@@ -57,10 +45,7 @@ const StatCard = ({ label, value, sub, icon: Icon, accent, bg, trend }) => (
       </div>
     </div>
     <p className="text-2xl font-bold text-stone-900">{value}</p>
-    <div className="flex items-center gap-1 mt-1">
-      {trend && <TrendingUp className="w-3 h-3 text-green-500" />}
-      {sub && <p className="text-xs text-stone-400">{sub}</p>}
-    </div>
+    {sub && <p className="text-xs text-stone-400 mt-1">{sub}</p>}
   </div>
 );
 
@@ -96,32 +81,27 @@ const AdminDashboard = () => {
     totalStudents: 0,
     pendingVerifications: 0,
     totalHomeowners: 0,
+    suspendedUsers: 0,
+    totalBookings: 0,
+    confirmedBookings: 0,
+    totalIncidents: 0,
+    pendingIncidents: 0,
     activeCarpools: 0,
+    completedCarpools: 0,
+    totalRevenue: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
+    api
+      .get("/admin/stats")
+      .then((r) => setStats(r.data.stats))
+      .catch((e) => console.error("Failed to fetch stats:", e))
+      .finally(() => setLoading(false));
   }, []);
 
-  const fetchStats = async () => {
-    try {
-      const [adminRes, carpoolRes] = await Promise.all([
-        api.get("/admin/stats"),
-        api
-          .get("/carpool/admin/routes?status=open")
-          .catch(() => ({ data: { data: [] } })),
-      ]);
-      setStats({
-        ...adminRes.data.stats,
-        activeCarpools: carpoolRes.data.data?.length || 0,
-      });
-    } catch (err) {
-      console.error("Failed to fetch stats:", err);
-    }
-  };
-
   return (
-    <DashboardLayout navItems={navItems}>
+    <DashboardLayout navItems={ADMIN_NAV}>
       <div className="p-6 lg:p-8 max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -139,44 +119,85 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Stats row 1 — users */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <StatCard
             label="Total Users"
-            value={stats.totalUsers}
+            value={loading ? "—" : stats.totalUsers}
             sub="All roles"
             icon={Users}
             accent="text-purple-600"
             bg="bg-purple-50"
+            onClick={() => navigate("/dashboard/admin/users")}
           />
           <StatCard
             label="Students"
-            value={stats.totalStudents}
+            value={loading ? "—" : stats.totalStudents}
             sub={`${stats.totalHomeowners} homeowners`}
             icon={UserCheck}
             accent="text-blue-600"
             bg="bg-blue-50"
+            onClick={() => navigate("/dashboard/admin/users")}
           />
           <StatCard
             label="Pending Verifications"
-            value={stats.pendingVerifications}
+            value={loading ? "—" : stats.pendingVerifications}
             sub="Student IDs to review"
             icon={AlertTriangle}
             accent="text-amber-600"
             bg="bg-amber-50"
+            onClick={() => navigate("/dashboard/verifications")}
           />
           <StatCard
-            label="Active Carpools"
-            value={stats.activeCarpools}
-            sub="Open rides now"
-            icon={Car}
-            accent="text-teal-600"
-            bg="bg-teal-50"
-            trend
+            label="Suspended"
+            value={loading ? "—" : stats.suspendedUsers}
+            sub="Restricted accounts"
+            icon={UserX}
+            accent="text-red-500"
+            bg="bg-red-50"
+            onClick={() => navigate("/dashboard/admin/users")}
           />
         </div>
 
-        {/* Pending verifications banner */}
+        {/* Stats row 2 — platform activity */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard
+            label="Active Carpools"
+            value={loading ? "—" : stats.activeCarpools}
+            sub={`${stats.completedCarpools} completed`}
+            icon={Car}
+            accent="text-teal-600"
+            bg="bg-teal-50"
+            onClick={() => navigate("/dashboard/admin/carpool")}
+          />
+          <StatCard
+            label="Total Bookings"
+            value={loading ? "—" : stats.totalBookings}
+            sub={`${stats.confirmedBookings} confirmed`}
+            icon={ParkingSquare}
+            accent="text-blue-600"
+            bg="bg-blue-50"
+          />
+          <StatCard
+            label="Revenue"
+            value={loading ? "—" : `৳${stats.totalRevenue}`}
+            sub="Confirmed payments"
+            icon={Banknote}
+            accent="text-green-600"
+            bg="bg-green-50"
+          />
+          <StatCard
+            label="Incidents"
+            value={loading ? "—" : stats.totalIncidents}
+            sub={`${stats.pendingIncidents} pending`}
+            icon={ShieldAlert}
+            accent="text-rose-600"
+            bg="bg-rose-50"
+            onClick={() => navigate("/admin/incidents")}
+          />
+        </div>
+
+        {/* Pending verifications alert */}
         {stats.pendingVerifications > 0 && (
           <div
             onClick={() => navigate("/dashboard/verifications")}
@@ -198,6 +219,30 @@ const AdminDashboard = () => {
               </div>
             </div>
             <span className="text-amber-600 font-bold text-lg">→</span>
+          </div>
+        )}
+
+        {/* Pending incidents alert */}
+        {stats.pendingIncidents > 0 && (
+          <div
+            onClick={() => navigate("/admin/incidents")}
+            className="bg-rose-50 border border-rose-200 rounded-2xl p-4 mb-6 flex items-center justify-between cursor-pointer hover:bg-rose-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-rose-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <ShieldAlert className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-rose-900">
+                  {stats.pendingIncidents} unreviewed incident report
+                  {stats.pendingIncidents !== 1 ? "s" : ""}
+                </p>
+                <p className="text-xs text-rose-600">
+                  Click to review incidents
+                </p>
+              </div>
+            </div>
+            <span className="text-rose-600 font-bold text-lg">→</span>
           </div>
         )}
 
@@ -246,6 +291,13 @@ const AdminDashboard = () => {
             <SystemRow
               icon={AlertTriangle}
               label="SOS & Safety"
+              status="Operational"
+              color="text-green-600"
+              bg="bg-green-50"
+            />
+            <SystemRow
+              icon={ShieldAlert}
+              label="Incident Reporting"
               status="Operational"
               color="text-green-600"
               bg="bg-green-50"
@@ -311,42 +363,50 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Moderation queue */}
+        {/* Quick actions */}
         <div className="bg-white rounded-2xl border border-stone-200 p-6">
           <h3 className="text-sm font-bold text-stone-700 mb-4 uppercase tracking-widest">
-            Moderation Queue
+            Quick Actions
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               {
                 icon: UserCheck,
-                label: "Pending Verifications",
+                label: "Verify Students",
                 count: stats.pendingVerifications,
-                color: "text-blue-600",
-                bg: "bg-blue-50",
+                color: "text-amber-600",
+                bg: "bg-amber-50",
                 path: "/dashboard/verifications",
               },
               {
                 icon: Car,
-                label: "Active Carpools",
+                label: "Manage Rides",
                 count: stats.activeCarpools,
                 color: "text-teal-600",
                 bg: "bg-teal-50",
                 path: "/dashboard/admin/carpool",
               },
               {
-                icon: UserX,
-                label: "Flagged Accounts",
-                count: 0,
-                color: "text-red-500",
-                bg: "bg-red-50",
-                path: null,
+                icon: ShieldAlert,
+                label: "Review Incidents",
+                count: stats.pendingIncidents,
+                color: "text-rose-600",
+                bg: "bg-rose-50",
+                path: "/admin/incidents",
+              },
+              {
+                icon: Users,
+                label: "Manage Users",
+                count: stats.totalUsers,
+                color: "text-purple-600",
+                bg: "bg-purple-50",
+                path: "/dashboard/admin/users",
               },
             ].map((item) => (
               <div
                 key={item.label}
-                onClick={() => item.path && navigate(item.path)}
-                className={`flex items-center gap-3 bg-stone-50 rounded-2xl p-4 ${item.path ? "cursor-pointer hover:bg-stone-100 transition-colors" : ""}`}
+                onClick={() => navigate(item.path)}
+                className="flex items-center gap-3 bg-stone-50 rounded-2xl p-4 cursor-pointer hover:bg-stone-100 transition-colors"
               >
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}
@@ -355,7 +415,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <p className="text-lg font-bold text-stone-900">
-                    {item.count}
+                    {loading ? "—" : item.count}
                   </p>
                   <p className="text-xs text-stone-400">{item.label}</p>
                 </div>

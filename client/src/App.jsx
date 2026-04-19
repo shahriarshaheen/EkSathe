@@ -24,6 +24,7 @@ import ProfilePage from "./features/profile/pages/ProfilePage";
 // Admin
 import VerificationsPage from "./features/admin/pages/VerificationsPage";
 import AdminCarpoolPage from "./pages/AdminCarpoolPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 
 // Auth pages
 import RegisterPage from "./features/auth/pages/RegisterPage";
@@ -50,7 +51,7 @@ import PaymentFailPage from "./features/payment/pages/PaymentFailPage";
 import PaymentCancelPage from "./features/payment/pages/PaymentCancelPage";
 
 //Trip share
-import TripSharePage from './pages/TripSharePage';
+import TripSharePage from "./pages/TripSharePage";
 
 const App = () => {
   return (
@@ -177,6 +178,16 @@ const App = () => {
             }
           />
 
+          {/* Admin users */}
+          <Route
+            path="/dashboard/admin/users"
+            element={
+              <ProtectedRoute>
+                <AdminUsersPage />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Incidents */}
           <Route
             path="/dashboard/report-incident"
@@ -245,7 +256,7 @@ const App = () => {
           <Route path="/payment/success" element={<PaymentSuccessPage />} />
           <Route path="/payment/fail" element={<PaymentFailPage />} />
           <Route path="/payment/cancel" element={<PaymentCancelPage />} />
-          
+
           {/* Trip Share*/}
           <Route path="/share/:token" element={<TripSharePage />} />
 

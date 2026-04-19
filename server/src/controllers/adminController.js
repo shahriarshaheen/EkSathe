@@ -1,16 +1,17 @@
 import User from "../models/User.js";
+import Booking from "../models/Booking.js";
+import Payment from "../models/Payment.js";
+import Incident from "../models/Incident.js";
+import CarpoolRoute from "../models/CarpoolRoute.js";
 import nodemailer from "nodemailer";
 
 const getTransporter = () =>
   nodemailer.createTransport({
     service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
   });
 
-// ── GET ALL STUDENTS PENDING VERIFICATION ─────────────────────
+// ── PENDING STUDENTS ──────────────────────────────────────────
 export const getPendingStudents = async (req, res) => {
   try {
     const students = await User.find({
@@ -19,7 +20,6 @@ export const getPendingStudents = async (req, res) => {
       studentVerified: { $ne: true },
       studentRejected: { $ne: true },
     }).select("name email studentId university createdAt trustScore photoUrl");
-
     return res.status(200).json({ success: true, students });
   } catch (err) {
     console.error("getPendingStudents error:", err);
@@ -27,29 +27,97 @@ export const getPendingStudents = async (req, res) => {
   }
 };
 
-// ── GET ALL STUDENTS (approved + pending + rejected) ──────────
+// ── ALL STUDENTS ──────────────────────────────────────────────
 export const getAllStudents = async (req, res) => {
   try {
     const { status } = req.query;
-
     let query = { role: "student", isEmailVerified: true };
-
     if (status === "approved") query.studentVerified = true;
     else if (status === "rejected") query.studentRejected = true;
     else if (status === "pending") {
       query.studentVerified = { $ne: true };
       query.studentRejected = { $ne: true };
     }
-
     const students = await User.find(query)
       .select(
         "name email studentId university createdAt trustScore photoUrl studentVerified studentRejected",
       )
       .sort({ createdAt: -1 });
-
     return res.status(200).json({ success: true, students });
   } catch (err) {
     console.error("getAllStudents error:", err);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
+// ── ALL USERS (for user management page) ─────────────────────
+export const getAllUsers = async (req, res) => {
+  try {
+    const { role, status, page = 1, limit = 30 } = req.query;
+    const query = {};
+    if (role && role !== "all") query.role = role;
+    if (status && status !== "all") query.status = status;
+
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .select(
+          "name email role status trustScore photoUrl createdAt studentVerified studentRejected university",
+        )
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(Number(limit)),
+      User.countDocuments(query),
+    ]);
+
+    return res
+      .status(200)
+      .json({ success: true, data: users, total, page: Number(page) });
+  } catch (err) {
+    console.error("getAllUsers error:", err);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
+// ── SUSPEND USER ──────────────────────────────────────────────
+export const suspendUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+    if (user.role === "admin")
+      return res
+        .status(403)
+        .json({ success: false, message: "Cannot suspend an admin." });
+
+    user.status = "suspended";
+    await user.save();
+    return res
+      .status(200)
+      .json({ success: true, message: `${user.name} has been suspended.` });
+  } catch (err) {
+    console.error("suspendUser error:", err);
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
+// ── UNSUSPEND USER ────────────────────────────────────────────
+export const unsuspendUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found." });
+
+    user.status = "active";
+    await user.save();
+    return res
+      .status(200)
+      .json({ success: true, message: `${user.name} has been reinstated.` });
+  } catch (err) {
+    console.error("unsuspendUser error:", err);
     return res.status(500).json({ success: false, message: "Server error." });
   }
 };
@@ -58,49 +126,36 @@ export const getAllStudents = async (req, res) => {
 export const approveStudent = async (req, res) => {
   try {
     const student = await User.findById(req.params.id);
-
-    if (!student || student.role !== "student") {
+    if (!student || student.role !== "student")
       return res
         .status(404)
         .json({ success: false, message: "Student not found." });
-    }
 
     student.studentVerified = true;
     student.studentRejected = false;
     student.trustScore = Math.min((student.trustScore || 0) + 10, 100);
     await student.save();
 
-    // Send approval email
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       try {
         await getTransporter().sendMail({
           from: `"EkSathe" <${process.env.EMAIL_USER}>`,
           to: student.email,
           subject: "Your student ID has been verified — EkSathe",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 20px;">
-              <div style="background:#111827; padding:20px 24px; border-radius:10px 10px 0 0;">
-                <span style="color:white; font-size:18px; font-weight:700;">EkSathe</span>
-              </div>
-              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-top:none; padding:24px; border-radius:0 0 10px 10px;">
-                <p style="font-size:22px; font-weight:700; color:#166534; margin:0 0 12px;">✅ Student ID Verified</p>
-                <p style="font-size:15px; color:#374151; margin:0 0 16px;">Hi ${student.name},</p>
-                <p style="font-size:15px; color:#374151; line-height:1.6; margin:0 0 16px;">
-                  Your student ID <strong>${student.studentId}</strong> has been verified by our team.
-                  You now have full access to all EkSathe student features.
-                </p>
-                <p style="font-size:14px; color:#6b7280;">Your trust score has been increased by 10 points.</p>
-                <hr style="border:none; border-top:1px solid #d1fae5; margin:20px 0;" />
-                <p style="font-size:12px; color:#9ca3af; text-align:center;">© ${new Date().getFullYear()} EkSathe — Smart Campus Mobility</p>
-              </div>
-            </div>
-          `,
+          html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:20px">
+            <div style="background:#111827;padding:20px 24px;border-radius:10px 10px 0 0">
+              <span style="color:white;font-size:18px;font-weight:700">EkSathe</span></div>
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-top:none;padding:24px;border-radius:0 0 10px 10px">
+              <p style="font-size:22px;font-weight:700;color:#166534;margin:0 0 12px">✅ Student ID Verified</p>
+              <p style="font-size:15px;color:#374151;margin:0 0 16px">Hi ${student.name},</p>
+              <p style="font-size:15px;color:#374151;line-height:1.6;margin:0 0 16px">
+                Your student ID <strong>${student.studentId}</strong> has been verified. You now have full access.</p>
+              <p style="font-size:14px;color:#6b7280">Your trust score has been increased by 10 points.</p></div></div>`,
         });
-      } catch (emailErr) {
-        console.error("Approval email failed:", emailErr.message);
+      } catch (e) {
+        console.error("Approval email failed:", e.message);
       }
     }
-
     return res.status(200).json({
       success: true,
       message: `${student.name}'s student ID verified successfully.`,
@@ -116,50 +171,36 @@ export const rejectStudent = async (req, res) => {
   try {
     const { reason } = req.body;
     const student = await User.findById(req.params.id);
-
-    if (!student || student.role !== "student") {
+    if (!student || student.role !== "student")
       return res
         .status(404)
         .json({ success: false, message: "Student not found." });
-    }
 
     student.studentRejected = true;
     student.studentVerified = false;
     await student.save();
 
-    // Send rejection email
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       try {
         await getTransporter().sendMail({
           from: `"EkSathe" <${process.env.EMAIL_USER}>`,
           to: student.email,
           subject: "Action required on your EkSathe student verification",
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 20px;">
-              <div style="background:#111827; padding:20px 24px; border-radius:10px 10px 0 0;">
-                <span style="color:white; font-size:18px; font-weight:700;">EkSathe</span>
-              </div>
-              <div style="background:#fff7ed; border:1px solid #fed7aa; border-top:none; padding:24px; border-radius:0 0 10px 10px;">
-                <p style="font-size:22px; font-weight:700; color:#9a3412; margin:0 0 12px;">⚠️ Verification Needs Attention</p>
-                <p style="font-size:15px; color:#374151; margin:0 0 16px;">Hi ${student.name},</p>
-                <p style="font-size:15px; color:#374151; line-height:1.6; margin:0 0 16px;">
-                  We were unable to verify your student ID <strong>${student.studentId}</strong>.
-                </p>
-                ${reason ? `<p style="font-size:14px; color:#374151; background:#fee2e2; padding:12px; border-radius:8px; margin:0 0 16px;"><strong>Reason:</strong> ${reason}</p>` : ""}
-                <p style="font-size:14px; color:#6b7280; line-height:1.6;">
-                  Please contact your university admin or reach out to EkSathe support with the correct student ID.
-                </p>
-                <hr style="border:none; border-top:1px solid #fed7aa; margin:20px 0;" />
-                <p style="font-size:12px; color:#9ca3af; text-align:center;">© ${new Date().getFullYear()} EkSathe — Smart Campus Mobility</p>
-              </div>
-            </div>
-          `,
+          html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:20px">
+            <div style="background:#111827;padding:20px 24px;border-radius:10px 10px 0 0">
+              <span style="color:white;font-size:18px;font-weight:700">EkSathe</span></div>
+            <div style="background:#fff7ed;border:1px solid #fed7aa;border-top:none;padding:24px;border-radius:0 0 10px 10px">
+              <p style="font-size:22px;font-weight:700;color:#9a3412;margin:0 0 12px">⚠️ Verification Needs Attention</p>
+              <p style="font-size:15px;color:#374151;margin:0 0 16px">Hi ${student.name},</p>
+              <p style="font-size:15px;color:#374151;line-height:1.6;margin:0 0 16px">
+                We were unable to verify your student ID <strong>${student.studentId}</strong>.</p>
+              ${reason ? `<p style="font-size:14px;color:#374151;background:#fee2e2;padding:12px;border-radius:8px;margin:0 0 16px"><strong>Reason:</strong> ${reason}</p>` : ""}
+              <p style="font-size:14px;color:#6b7280">Please contact support with the correct student ID.</p></div></div>`,
         });
-      } catch (emailErr) {
-        console.error("Rejection email failed:", emailErr.message);
+      } catch (e) {
+        console.error("Rejection email failed:", e.message);
       }
     }
-
     return res.status(200).json({
       success: true,
       message: `${student.name}'s verification rejected.`,
@@ -170,7 +211,7 @@ export const rejectStudent = async (req, res) => {
   }
 };
 
-// ── GET PLATFORM STATS ────────────────────────────────────────
+// ── ENHANCED STATS ────────────────────────────────────────────
 export const getStats = async (req, res) => {
   try {
     const [
@@ -179,6 +220,14 @@ export const getStats = async (req, res) => {
       pendingVerifications,
       totalHomeowners,
       totalAdmins,
+      suspendedUsers,
+      totalBookings,
+      confirmedBookings,
+      totalIncidents,
+      pendingIncidents,
+      activeCarpools,
+      completedCarpools,
+      revenueAgg,
     ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ role: "student" }),
@@ -190,7 +239,20 @@ export const getStats = async (req, res) => {
       }),
       User.countDocuments({ role: "homeowner" }),
       User.countDocuments({ role: "admin" }),
+      User.countDocuments({ status: "suspended" }),
+      Booking.countDocuments(),
+      Booking.countDocuments({ status: "confirmed" }),
+      Incident.countDocuments(),
+      Incident.countDocuments({ status: "pending" }),
+      CarpoolRoute.countDocuments({ status: { $in: ["open", "full"] } }),
+      CarpoolRoute.countDocuments({ status: "completed" }),
+      Payment.aggregate([
+        { $match: { status: "paid" } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]),
     ]);
+
+    const totalRevenue = revenueAgg[0]?.total || 0;
 
     return res.status(200).json({
       success: true,
@@ -200,6 +262,14 @@ export const getStats = async (req, res) => {
         pendingVerifications,
         totalHomeowners,
         totalAdmins,
+        suspendedUsers,
+        totalBookings,
+        confirmedBookings,
+        totalIncidents,
+        pendingIncidents,
+        activeCarpools,
+        completedCarpools,
+        totalRevenue,
       },
     });
   } catch (err) {
