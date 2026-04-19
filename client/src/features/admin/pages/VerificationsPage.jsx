@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
-  MapPin,
   UserCheck,
   UserX,
   Clock,
@@ -11,10 +9,23 @@ import {
   XCircle,
   GraduationCap,
   Search,
-  Filter,
+  LayoutDashboard,
+  Car,
+  ShieldAlert,
+  Users,
 } from "lucide-react";
 import api from "../../../lib/api";
+import DashboardLayout from "../../../components/ui/DashboardLayout";
 import { getUniversityById } from "../../../constants/universities";
+
+// Unified admin nav — same on all admin pages
+const NAV_ITEMS = [
+  { path: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { path: "/dashboard/verifications", label: "Verifications", icon: UserCheck },
+  { path: "/dashboard/admin/carpool", label: "Carpool Rides", icon: Car },
+  { path: "/admin/incidents", label: "Incidents", icon: ShieldAlert },
+  { path: "/dashboard/admin/users", label: "User Management", icon: Users },
+];
 
 const statusTabs = ["pending", "approved", "rejected"];
 
@@ -23,7 +34,6 @@ const StudentCard = ({ student, onApprove, onReject, tab }) => {
   const [rejecting, setRejecting] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [reason, setReason] = useState("");
-
   const university = student.university
     ? getUniversityById(student.university)
     : null;
@@ -33,7 +43,6 @@ const StudentCard = ({ student, onApprove, onReject, tab }) => {
     await onApprove(student._id);
     setApproving(false);
   };
-
   const handleReject = async () => {
     setRejecting(true);
     await onReject(student._id, reason);
@@ -44,7 +53,6 @@ const StudentCard = ({ student, onApprove, onReject, tab }) => {
   return (
     <div className="bg-white rounded-xl border border-stone-200 p-5">
       <div className="flex items-start gap-4">
-        {/* Avatar */}
         <div className="w-11 h-11 rounded-full overflow-hidden bg-stone-100 flex-shrink-0">
           {student.photoUrl ? (
             <img
@@ -60,8 +68,6 @@ const StudentCard = ({ student, onApprove, onReject, tab }) => {
             </div>
           )}
         </div>
-
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
             <p className="font-semibold text-stone-900 text-sm">
@@ -83,25 +89,20 @@ const StudentCard = ({ student, onApprove, onReject, tab }) => {
               </span>
             )}
           </div>
-
           <p className="text-xs text-stone-400 mb-2">{student.email}</p>
-
           <div className="flex flex-wrap gap-2 mb-3">
             <span className="flex items-center gap-1 text-xs bg-stone-100 text-stone-600 px-2 py-1 rounded-lg">
-              <UserCheck className="w-3 h-3" />
-              ID:{" "}
+              <UserCheck className="w-3 h-3" /> ID:{" "}
               <span className="font-mono font-semibold">
                 {student.studentId || "Not provided"}
               </span>
             </span>
             {university && (
               <span className="flex items-center gap-1 text-xs bg-teal-50 text-teal-700 px-2 py-1 rounded-lg">
-                <GraduationCap className="w-3 h-3" />
-                {university.name}
+                <GraduationCap className="w-3 h-3" /> {university.name}
               </span>
             )}
           </div>
-
           <p className="text-xs text-stone-400">
             Registered{" "}
             {new Date(student.createdAt).toLocaleDateString("en-US", {
@@ -113,7 +114,6 @@ const StudentCard = ({ student, onApprove, onReject, tab }) => {
         </div>
       </div>
 
-      {/* Actions — only for pending */}
       {tab === "pending" && (
         <div className="mt-4 pt-4 border-t border-stone-100">
           {!showRejectForm ? (
@@ -166,7 +166,6 @@ const StudentCard = ({ student, onApprove, onReject, tab }) => {
         </div>
       )}
 
-      {/* Re-review option for rejected */}
       {tab === "rejected" && (
         <div className="mt-4 pt-4 border-t border-stone-100">
           <button
@@ -184,7 +183,6 @@ const StudentCard = ({ student, onApprove, onReject, tab }) => {
 };
 
 const VerificationsPage = () => {
-  const navigate = useNavigate();
   const [tab, setTab] = useState("pending");
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -204,8 +202,6 @@ const VerificationsPage = () => {
     try {
       const res = await api.get(`/admin/students?status=${tab}`);
       setStudents(res.data.students || []);
-
-      // Fetch counts for all tabs
       const [p, a, r] = await Promise.all([
         api.get("/admin/students?status=pending"),
         api.get("/admin/students?status=approved"),
@@ -216,7 +212,7 @@ const VerificationsPage = () => {
         approved: a.data.students?.length || 0,
         rejected: r.data.students?.length || 0,
       });
-    } catch (err) {
+    } catch {
       toast.error("Could not load students.");
     } finally {
       setLoading(false);
@@ -232,11 +228,10 @@ const VerificationsPage = () => {
       toast.error(err.message || "Could not approve student.");
     }
   };
-
   const handleReject = async (id, reason) => {
     try {
       await api.put(`/admin/students/${id}/reject`, { reason });
-      toast.success("Student verification rejected.");
+      toast.success("Verification rejected.");
       fetchStudents();
     } catch (err) {
       toast.error(err.message || "Could not reject student.");
@@ -251,43 +246,18 @@ const VerificationsPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      {/* Top bar */}
-      <header className="bg-white border-b border-stone-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-3">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-teal-600 rounded-md flex items-center justify-center">
-              <MapPin className="w-3 h-3 text-white" strokeWidth={2.5} />
-            </div>
-            <span className="font-bold text-stone-900 tracking-tight text-sm">
-              EkSathe
-            </span>
-          </div>
-          <span className="text-stone-300">·</span>
-          <span className="text-sm font-medium text-stone-600">
-            Student Verifications
-          </span>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-6">
+    <DashboardLayout navItems={NAV_ITEMS}>
+      <div className="p-6 lg:p-8 max-w-4xl mx-auto">
+        <div className="mb-8">
           <h1 className="text-2xl font-bold text-stone-900 tracking-tight">
             Student Verifications
           </h1>
           <p className="text-stone-500 text-sm mt-1">
-            Review and verify student ID submissions.
+            Review and approve student ID submissions.
           </p>
         </div>
 
-        {/* Stats */}
+        {/* Counts */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
             <p className="text-2xl font-bold text-amber-700">
@@ -313,20 +283,12 @@ const VerificationsPage = () => {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg capitalize transition-all ${
-                tab === t
-                  ? "bg-white text-stone-900 shadow-sm"
-                  : "text-stone-500 hover:text-stone-700"
-              }`}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg capitalize transition-all ${tab === t ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"}`}
             >
               {t}
               {counts[t] > 0 && (
                 <span
-                  className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                    tab === t
-                      ? "bg-stone-100 text-stone-600"
-                      : "bg-stone-200 text-stone-500"
-                  }`}
+                  className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${tab === t ? "bg-stone-100 text-stone-600" : "bg-stone-200 text-stone-500"}`}
                 >
                   {counts[t]}
                 </span>
@@ -347,14 +309,12 @@ const VerificationsPage = () => {
           />
         </div>
 
-        {/* Loading */}
         {loading && (
           <div className="flex items-center justify-center py-16">
             <div className="w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
-        {/* Empty state */}
         {!loading && filtered.length === 0 && (
           <div className="bg-white rounded-xl border border-stone-200 p-12 text-center">
             <UserCheck className="w-10 h-10 text-stone-200 mx-auto mb-3" />
@@ -363,13 +323,12 @@ const VerificationsPage = () => {
             </p>
             <p className="text-xs text-stone-400">
               {tab === "pending"
-                ? "All student submissions have been reviewed."
+                ? "All submissions reviewed."
                 : `No ${tab} students found.`}
             </p>
           </div>
         )}
 
-        {/* Student cards */}
         {!loading && filtered.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filtered.map((student) => (
@@ -383,8 +342,8 @@ const VerificationsPage = () => {
             ))}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 

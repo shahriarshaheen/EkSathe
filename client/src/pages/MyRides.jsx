@@ -14,11 +14,15 @@ import {
   ChevronUp,
   Star,
   MessageCircle,
+  Navigation,
 } from "lucide-react";
 import DashboardLayout from "../components/ui/DashboardLayout";
 import CarpoolMapPicker from "../components/CarpoolMapPicker";
 import RatingModal from "../components/RatingModal";
 import ChatModal from "../components/ChatModal";
+import TripShareButton from "../components/TripShareButton";
+import DeviationAlertBanner from "../components/DeviationAlertBanner";
+import StartTripModal from "../components/StartTripModal";
 import api from "../lib/api";
 
 const TAKA = "\u09F3";
@@ -63,9 +67,18 @@ const RideCard = ({
   const [expanded, setExpanded] = useState(false);
   const [ratingTarget, setRatingTarget] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
+  // F-14: Route Deviation Alert
+  const [startTripOpen, setStartTripOpen] = useState(false);
+  const [tripIsActive, setTripIsActive] = useState(ride.tripActive || false);
+
   const departure = new Date(ride.departureTime);
   const isPast = departure < new Date();
   const rateable = isRateable(ride);
+
+  // Show TripShareButton only on active rides that haven't departed yet
+  const canShareLocation =
+    !isPast &&
+    (ride.status === "open" || ride.status === "full");
 
   const hasRated = (userId) =>
     ratedKeys.has(ratedKey(ride._id, userId?.toString()));
@@ -78,15 +91,12 @@ const RideCard = ({
       return false;
     })();
 
-  // Build participants list for chat header
   const participants = isDriver
     ? ride.passengers?.map((p) => ({ name: p.name, photoUrl: p.photoUrl })) ||
       []
     : [{ name: ride.driver?.name, photoUrl: ride.driver?.photoUrl }];
 
   const chatTitle = `${ride.origin.area} ${ARROW} ${ride.destination.area}`;
-
-  // Chat only available for active/joined rides (not cancelled)
   const canChat = ride.status !== "cancelled";
 
   return (
@@ -291,9 +301,25 @@ const RideCard = ({
             </div>
           )}
 
+          {/* F-14: Route Deviation Alert banner */}
+          {(ride.status === "open" || ride.status === "full") && !isPast && (
+            <div className="mb-3">
+              <DeviationAlertBanner
+                rideId={ride._id}
+                isDriver={isDriver}
+              />
+            </div>
+          )}
+
+          {/* Trip share button — active rides only */}
+          {canShareLocation && (
+            <div className="mb-3">
+              <TripShareButton rideId={ride._id} />
+            </div>
+          )}
+
           {/* Chat + Map buttons row */}
           <div className="flex gap-2 mb-3">
-            {/* Chat button */}
             {canChat && (
               <button
                 onClick={() => setChatOpen(true)}
@@ -309,7 +335,6 @@ const RideCard = ({
               </button>
             )}
 
-            {/* Map toggle */}
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
@@ -356,6 +381,26 @@ const RideCard = ({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* F-14: Start Trip — driver only, active rides not yet departed */}
+          {isDriver &&
+            !isPast &&
+            ride.status !== "cancelled" &&
+            ride.status !== "completed" && (
+              <button
+                onClick={() => setStartTripOpen(true)}
+                className={`w-full mb-2 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  tripIsActive
+                    ? "bg-teal-600 text-white hover:bg-teal-700"
+                    : "bg-teal-50 border border-teal-300 text-teal-700 hover:bg-teal-100"
+                }`}
+              >
+                <Navigation className="w-4 h-4" />
+                {tripIsActive
+                  ? "Tracking Active — Manage Trip"
+                  : "Start Trip & Track Route"}
+              </button>
+            )}
 
           {/* Action buttons */}
           {isDriver &&
@@ -408,6 +453,16 @@ const RideCard = ({
           onClose={() => setChatOpen(false)}
         />
       )}
+
+      {/* F-14: Start Trip Modal */}
+      {startTripOpen && (
+        <StartTripModal
+          ride={ride}
+          onClose={() => setStartTripOpen(false)}
+          onTripStart={() => setTripIsActive(true)}
+          onTripEnd={() => setTripIsActive(false)}
+        />
+      )}
     </>
   );
 };
@@ -445,7 +500,6 @@ export default function MyRides() {
       );
       setRatedKeys(keys);
 
-      // Fetch unread counts for all rides
       const allRides = [...postedData, ...joinedData];
       if (allRides.length > 0) {
         try {

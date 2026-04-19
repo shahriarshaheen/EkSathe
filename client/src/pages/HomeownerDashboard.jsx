@@ -17,6 +17,7 @@ import {
 import DashboardLayout from "../components/ui/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
 import api from "../lib/api";
+import AnnouncementManager from "../components/AnnouncementManager";
 
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
@@ -189,7 +190,7 @@ const HomeownerDashboard = () => {
     api
       .get("/parking/my/listings")
       .then((r) => {
-        const listings = r.data.data || [];
+        const listings = r.data.spots || [];
         setStats((prev) => ({
           ...prev,
           activeListings: listings.filter((l) => l.isActive !== false).length,
@@ -321,13 +322,18 @@ const HomeownerDashboard = () => {
             </div>
           </div>
         )}
-
         {/* Content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-xl border border-stone-200 p-6">
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Announcement Board */}
+            <AnnouncementManager />
+
+            <div className="bg-white rounded-xl border border-stone-200 p-6">
             <h3 className="text-sm font-semibold text-stone-700 mb-5">
               How EkSathe Works for You
             </h3>
+
             <div className="space-y-4">
               {[
                 {
@@ -373,7 +379,8 @@ const HomeownerDashboard = () => {
                 View my listings
               </button>
             </div>
-          </div>
+            </div>{/* closes space-y-6 */}
+          </div>{/* closes lg:col-span-2 */}
 
           <div className="bg-white rounded-xl border border-stone-200 p-5">
             <h3 className="text-sm font-semibold text-stone-700 mb-4">
