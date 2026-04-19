@@ -1,5 +1,7 @@
 import { validationResult } from "express-validator";
 import Booking from "../models/Booking.js";
+import { sendPush } from "../services/pushService.js";
+import User from "../models/User.js";
 
 // POST /api/bookings — student creates a booking
 export const createBooking = async (req, res) => {
@@ -14,7 +16,6 @@ export const createBooking = async (req, res) => {
     const { spotId, homeownerId, date, startTime, endTime, totalPrice } =
       req.body;
 
-    // Conflict check — same spot, same date, overlapping time
     const conflict = await Booking.findOne({
       spotId,
       date,
@@ -39,6 +40,19 @@ export const createBooking = async (req, res) => {
       totalPrice,
     });
 
+    // Push notification to homeowner — saves to DB + sends FCM
+    try {
+      const homeowner = await User.findById(homeownerId).select("+fcmToken");
+      await sendPush(
+        homeownerId,
+        homeowner?.fcmToken || null,
+        "New Booking Request",
+        `A student has booked your spot for ${date}`,
+        "booking_request",
+        { bookingId: booking._id.toString() }
+      );
+    } catch { /* silent — never crash the booking */ }
+
     return res.status(201).json({ success: true, data: booking });
   } catch (err) {
     console.error("createBooking error:", err);
@@ -47,14 +61,12 @@ export const createBooking = async (req, res) => {
 };
 
 // GET /api/bookings/my — student sees their own bookings
-// Populates homeownerId so the frontend can show Rate button
 export const getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ studentId: req.user.id })
       .populate("homeownerId", "name photoUrl trustScore")
       .sort({ createdAt: -1 });
 
-    // Reshape so frontend gets booking.homeowner instead of booking.homeownerId
     const shaped = bookings.map((b) => {
       const obj = b.toObject();
       obj.homeowner = obj.homeownerId;
@@ -68,7 +80,7 @@ export const getMyBookings = async (req, res) => {
   }
 };
 
-// GET /api/bookings/spot/:spotId — get bookings for a spot (homeowner/admin)
+// GET /api/bookings/spot/:spotId
 export const getSpotBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({
@@ -83,7 +95,7 @@ export const getSpotBookings = async (req, res) => {
   }
 };
 
-// PATCH /api/bookings/:id/cancel — cancel a booking
+// PATCH /api/bookings/:id/cancel
 export const cancelBooking = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -106,12 +118,10 @@ export const cancelBooking = async (req, res) => {
     const isAdmin = req.user.role === "admin";
 
     if (!isStudent && !isHomeowner && !isAdmin) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Not authorized to cancel this booking",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to cancel this booking",
+      });
     }
 
     if (booking.status === "cancelled") {
@@ -131,14 +141,13 @@ export const cancelBooking = async (req, res) => {
   }
 };
 
-// GET /api/bookings/homeowner — homeowner sees bookings for their spots
+// GET /api/bookings/homeowner
 export const getHomeownerBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ homeownerId: req.user.id })
       .populate("studentId", "name photoUrl trustScore")
       .sort({ createdAt: -1 });
 
-    // Reshape so frontend gets booking.student
     const shaped = bookings.map((b) => {
       const obj = b.toObject();
       obj.student = obj.studentId;

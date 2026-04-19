@@ -6,9 +6,12 @@ import {
   useCallback,
 } from "react";
 import { authService } from "../services/authService";
+import {
+  requestPushPermission,
+  listenForegroundMessages,
+} from "../services/pushNotificationService";
 
 const AuthContext = createContext(null);
-
 const TOKEN_KEY = "eksathe_token";
 
 export const AuthProvider = ({ children }) => {
@@ -24,10 +27,9 @@ export const AuthProvider = ({ children }) => {
       }
       try {
         const res = await authService.getMe();
-        // FIX: authService.getMe() returns { success, data: { id, name, ... } }
-        // Previously setUser(res.data) set user = { success, data } — wrong shape
-        // Now we unwrap correctly so user = { id, name, email, role, ... }
         setUser(res.data);
+        // Start listening for foreground messages after hydration
+        listenForegroundMessages();
       } catch {
         localStorage.removeItem(TOKEN_KEY);
         setToken(null);
@@ -36,7 +38,6 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     };
-
     hydrate();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -49,8 +50,13 @@ export const AuthProvider = ({ children }) => {
     async (credentials) => {
       const res = await authService.login(credentials);
       saveToken(res.token);
-      // FIX: res.data is already the user object { id, name, email, ... }
       setUser(res.data);
+      // Start foreground listener immediately after login
+      listenForegroundMessages();
+      // Non-blocking — request push permission 2s after login
+      setTimeout(() => {
+        requestPushPermission().catch(() => {});
+      }, 2000);
       return res;
     },
     [saveToken],

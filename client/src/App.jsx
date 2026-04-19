@@ -50,6 +50,8 @@ import PaymentSuccessPage from "./features/payment/pages/PaymentSuccessPage";
 import PaymentFailPage from "./features/payment/pages/PaymentFailPage";
 import PaymentCancelPage from "./features/payment/pages/PaymentCancelPage";
 
+// Notifications
+import NotificationsPage from "./pages/NotificationsPage";
 //Trip share
 import TripSharePage from "./pages/TripSharePage";
 
@@ -248,6 +250,16 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <MyRides />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Notifications */}
+          <Route
+            path="/dashboard/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />

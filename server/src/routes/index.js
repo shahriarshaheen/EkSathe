@@ -10,6 +10,8 @@ import adminRoutes from "./adminRoutes.js";
 import carpoolRoutes from "./carpoolRouter.js";
 import ratingRoutes from "./ratingRoutes.js";
 import messageRoutes from "./messageRoutes.js";
+import notificationRoutes from "./notificationRoutes.js";
+
 import tripShareRoutes from './tripShareRoutes.js';
 import announcementRoutes from './announcementRoutes.js'; 
 const router = Router();
@@ -29,6 +31,9 @@ router.use("/admin", adminRoutes);
 router.use("/carpool", carpoolRoutes);
 router.use("/ratings", ratingRoutes);
 router.use("/messages", messageRoutes);
+router.use("/notifications", notificationRoutes);
+
+export default router;
 router.use("/tripshare", tripShareRoutes);
 router.use("/announcements", announcementRoutes);
 export default router;
