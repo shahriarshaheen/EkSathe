@@ -14,6 +14,7 @@ import RatingModal from "../../../components/RatingModal";
 import ChatModal from "../../../components/ChatModal";
 import { Home, Car, Shield, Bell } from "lucide-react";
 import api from "../../../lib/api";
+import AnnouncementBanner from "../../../components/AnnouncementBanner";
 
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
@@ -156,6 +157,7 @@ export default function MyBookingsPage() {
               const homeowner = booking.homeowner;
               const canChat = booking.status !== "cancelled";
               const unread = unreadCounts[`parking_${booking._id}`] || 0;
+              const spotId = booking.spotId?._id || booking.spotId;
 
               return (
                 <div
@@ -164,6 +166,9 @@ export default function MyBookingsPage() {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                     <div className="flex-1 space-y-3">
+                      {/* Announcement Banner */}
+                      <AnnouncementBanner spotId={spotId} />
+
                       {/* Status + ID */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
