@@ -59,6 +59,28 @@ const carpoolRouteSchema = new mongoose.Schema(
       maxlength: 300,
       default: "",
     },
+
+    // ─── F-14: Route Deviation Alert ────────────────────────────────
+    // Stored when driver taps "Start Ride". Array of {lat, lng} points.
+    plannedPolyline: {
+      type: [
+        {
+          lat: { type: Number, required: true },
+          lng: { type: Number, required: true },
+        },
+      ],
+      default: [],
+    },
+    // True while driver is actively sharing location (trip in progress)
+    tripActive: {
+      type: Boolean,
+      default: false,
+    },
+    // Timestamp when trip was started
+    tripStartedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
