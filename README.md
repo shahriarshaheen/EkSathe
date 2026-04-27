@@ -28,7 +28,7 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 | SOS Panic Button (F-11)                | ✅ Complete |
 | Rider Trust Profile (F-12)             | ✅ Complete |
 | Live Trip Sharing (F-13)               | ✅ Complete |
-| Route Deviation Alert (F-14)           | ✅ Complete |
+| Homeowner Announcement (F-14)           | ✅ Complete |
 | Admin Moderation Dashboard (F-15)      | ✅ Complete |
 | Smart Demand Indicator (F-16)          | 🔲 Sprint 4 |
 | Dynamic Pricing Nudge (F-17)           | 🔲 Sprint 4 |
