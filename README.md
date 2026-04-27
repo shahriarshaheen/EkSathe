@@ -169,95 +169,174 @@ EkSathe/
 Full carpool platform with map-based route pinning:
 
 * 3-step wizard — pick route, trip details, confirm
-* Step 1: Select from preset university routes OR pin exact pickup/dropoff on map
-* Reverse geocoding resolves map clicks into real addresses
+* Step 1: Select from 40 preset university routes across 10 Dhaka universities OR pin exact pickup/dropoff on Leaflet map
+* Nominatim reverse geocoding — tapping map auto-resolves to real street address
+* Preset route shows preview map with both markers and dashed route line
 * Step 2: Departure time, seats (1–6), price per seat, gender-safe toggle, notes
-* Step 3: Review with full route preview before posting
-* Double booking prevention within time window
+* Step 3: Review with map showing full route before posting
+* Double booking prevention — blocks joining two rides within 2 hours
+
+**Endpoints:**
+
+```
+GET    /api/carpool/presets
+GET    /api/carpool/routes
+POST   /api/carpool/routes
+POST   /api/carpool/routes/:id/join
+DELETE /api/carpool/routes/:id/leave
+PATCH  /api/carpool/routes/:id/cancel
+GET    /api/carpool/my
+GET    /api/carpool/admin/routes
+PATCH  /api/carpool/admin/routes/:id/cancel
+```
 
 ---
 
 ### Ride Discovery & Smart Browse (F-07)
 
-* Standalone full-page ride browsing experience
-* From/To inputs with visual indicators
-* Suggested rides based on user's university
-* Filters: university + gender-safe
-* Skeleton loading UI
-* My Rides page with active/past separation
+* Full-page carpool experience — no sidebar, standalone layout
+* From/To search inputs with teal/rose dot indicators
+* "Suggested for you" section — reads user's registered university and surfaces matching rides at the top
+* University filter dropdown and gender-safe toggle
+* Skeleton loading cards — no spinner
+* Contextual empty state with Post a Ride CTA
+* My Rides page — active/past tabs, posted and joined rides
+* Expandable map per ride card, passenger manifest for drivers
+* Cancel ride (driver) and Leave ride (passenger) actions
 
 ---
 
 ### Trust & Rating System (F-08)
 
-* Mutual rating for carpool and parking
-* Score impact system (positive + negative weighting)
-* Duplicate rating prevention
-* Ratings dashboard with breakdown
+Peer accountability system for both carpool and parking:
+
+* After departure time passes, Rate button appears per person on past rides
+* Driver rates each passenger individually — not blocked after first rating
+* Passenger rates driver
+* After confirmed booking end time, Rate Spot button appears on My Bookings
+* Student rates homeowner
+* Quick comment chips per context — "Great driver!", "Punctual", "Left spot clean"
+* Trust score auto-updates — 5★ = +3, 4★ = +2, 3★ = +1, 2★ = -1, 1★ = -3
+* Duplicate prevention — one rating per person per ride or booking
+* My Ratings page — received ratings with breakdown chart, given ratings tab, filter by Carpool/Parking
+
+**Endpoints:**
+
+```
+POST   /api/ratings
+GET    /api/ratings/received
+GET    /api/ratings/given
+GET    /api/ratings/check
+GET    /api/ratings/user/:id
+```
 
 ---
 
 ### In-Ride & Booking Chat (F-09)
 
-* Carpool group chat + parking booking chat
-* Polling-based messaging (no WebSockets)
-* Read/unread tracking
-* Structured message UI with avatars and timestamps
+Private messaging system for carpool groups and parking bookings:
+
+* **Carpool chat** — driver and all confirmed passengers can message each other per ride
+* **Booking chat** — student and homeowner can message each other per booking
+* Polling every 5 seconds — no websocket dependency, works on existing infrastructure
+* Messages grouped by date with separators
+* My messages on right (teal for carpool, dark for parking), others on left with avatar and name
+* Unread message badge on chat button — count fetched in bulk on page load
+* Messages marked as read on open
+* Auto-scroll to latest message on open and on new message
+* Participant avatars shown in chat header
+* Authorization enforced on backend — only ride/booking members can read or write
+* Enter to send, Shift+Enter for new line, auto-expanding textarea
+
+**Endpoints:**
+
+```
+GET    /api/messages/:contextType/:contextId
+POST   /api/messages/:contextType/:contextId
+GET    /api/messages/unread/:contextType/:contextId
+POST   /api/messages/unread/bulk
+```
 
 ---
 
 ### Anonymous Incident Reporting (F-10)
 
-* Anonymous safety reporting with GPS capture
-* Admin moderation workflow
+* Categories: Harassment, Unsafe Driving, Theft, Suspicious Activity, Other
+* GPS auto-captured, fully anonymous submission
+* Admin table with status management (Pending → Reviewed → Resolved)
+
+**Endpoints:** `POST /api/incidents`, `GET /api/incidents` (admin), `PATCH /api/incidents/:id/status` (admin)
 
 ---
 
 ### SOS Panic Button (F-11)
 
-* One-tap emergency alert to saved contacts
-* Email with live location link
+* One-tap GPS alert to up to 3 emergency contacts
+* Branded email with Google Maps link
+* Pulsing animation when contacts are set
+
+**Endpoints:** `POST /api/sos/trigger`, `GET/POST /api/sos/contacts`, `DELETE /api/sos/contacts/:id`
 
 ---
 
 ### Rider Trust Profile (F-12)
 
-* Public user profile with trust score and verification
-* Ratings breakdown and recent reviews
-* Accessible from rides, bookings, and chat
-* Supports safer decision making before joining rides
+* Public profile page for each user showing name, photo, university, and verification status
+* Trust score prominently displayed with visual indicator
+* Rating breakdown with average score and total ratings count
+* Recent reviews preview (latest feedback from other users)
+* Badge indicators for verified student and active user
+* Accessible from ride cards, chat headers, and booking contexts
 
-**Endpoints:** `GET /api/users/:id/profile`, `GET /api/ratings/user/:id`
+**Endpoints:**
+
+```
+GET /api/users/:id/profile
+GET /api/ratings/user/:id
+```
 
 ---
 
 ### Live Trip Sharing (F-13)
 
-* Share live trip location with external contacts
-* Generates tracking link for real-time visibility
-* Auto-expiry after trip ends
-* Privacy-focused temporary sharing
+* One-tap trip sharing during active carpool rides
+* Generates live location tracking link (Google Maps integration)
+* Shareable with external contacts
+* Periodic location updates while trip is active
+* Auto-expiry after trip ends for privacy
 
-**Endpoints:** `POST /api/trips/share`, `GET /api/trips/:id/status`
+**Endpoints:**
+
+```
+POST /api/trips/share
+GET  /api/trips/:id/status
+```
 
 ---
 
 ### Homeowner Announcement (F-14)
 
-* Homeowners can post announcements per listing
-* Visible to users with bookings for that spot
-* Useful for schedule updates or notices
+* Homeowners can post announcements per parking listing
+* Visible to users with active or past bookings for that spot
+* Useful for schedule updates, availability notices, or alerts
+* Announcement banner shown on booking and listing pages
 
-**Endpoints:** `POST /api/announcements/:listingId`, `GET /api/announcements/:listingId`, `DELETE /api/announcements/:id`
+**Endpoints:**
+
+```
+POST   /api/announcements/:listingId
+GET    /api/announcements/:listingId
+DELETE /api/announcements/:id
+```
 
 ---
 
 ### Admin Moderation Dashboard (F-15)
 
-* Platform-wide statistics overview
-* Student verification controls
-* Carpool moderation tools
-* System monitoring panel
+* Real-time stats: users, students, pending verifications, active carpools
+* Student ID verification panel with approve/reject and email notifications
+* Carpool moderation panel — view all rides, force cancel, filter by status, search by driver
+* System status panel showing all modules
 
 ---
 
@@ -301,8 +380,15 @@ cd client && npm install && npm run dev
 | ------ | ------------------- | -------------- |
 | S1     | Parking Marketplace | ✅ Complete     |
 | S2     | Carpooling Network  | ✅ Complete     |
-| S3     | Safety & Trust      |  ✅ Complete    |
+| S3     | Safety & Trust      | 🔲 In Progress |
 | S4     | Smart Features      | 🔲 Pending     |
+
+| Teammate | Sprint 1        | Sprint 2        | Sprint 3        | Sprint 4    |
+| -------- | --------------- | --------------- | --------------- | ----------- |
+| Shahriar | F-01 ✅          | F-08 ✅          | F-11 ✅ + F-15 ✅ | F-17        |
+| Sushmita | F-02 ✅ + F-05 ✅ | F-06 ✅          | F-14  ✅          | F-16        |
+| Fauzia   | F-03 ✅          | F-07 ✅ + F-09 ✅ | F-12 + F-13 ✅   | F-19 + F-20 |
+| Tasnuva  | F-04 ✅          | F-10 ✅          | F-18  ✅         | F-18        |
 
 ---
 
@@ -313,7 +399,10 @@ git checkout -b feature/feature-name
 git add .
 git commit -m "feat: description"
 git push origin feature/feature-name
+# Open Pull Request to main
 ```
+
+**Commit format:** `feat:` / `fix:` / `chore:`
 
 ---
 
@@ -321,8 +410,9 @@ git push origin feature/feature-name
 
 * Never modify auth files
 * Backend first, then frontend
-* Test with all roles
+* Test with all 3 roles
 * Never commit `.env`
+* ES modules only — no `require()`
 
 ---
 
