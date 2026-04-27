@@ -8,8 +8,8 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 
 ## Project Status
 
-| Module                                 | Status      |
-| -------------------------------------- | ----------- |
+| Module                                 | Status        |
+| -------------------------------------- | -----------   |
 | Authentication System                  | ✅ Complete  |
 | Role-based Dashboards                  | ✅ Complete  |
 | University Email Restriction           | ✅ Complete  |
@@ -30,11 +30,11 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 | Live Trip Sharing (F-13)               | ✅ Complete  |
 | Homeowner Announcement (F-14)          | ✅ Complete  |
 | Admin Moderation Dashboard (F-15)      | ✅ Complete  |
-| Smart Demand Indicator (F-16)          | 🔲 Sprint 4 |
-| Dynamic Pricing Nudge (F-17)           | 🔲 Sprint 4 |
-| Firebase Push Notifications (F-18)     | 🔲 Sprint 4 |
-| Advanced Search & Filter (F-19)        | 🔲 Sprint 4 |
-| Trust Score & Badge System (F-20)      | 🔲 Sprint 4 |
+| Smart Demand Indicator (F-16)          | 🔲 Sprint 4  |
+| Dynamic Pricing Nudge (F-17)           | 🔲 Sprint 4  |
+| Firebase Push Notifications (F-18)     | ✅ Complete  |
+| Advanced Search & Filter (F-19)        | 🔲 Sprint 4  |
+| Cost Cutting Calculator (F-20)         | 🔲 Sprint 4  |
 
 ---
 
@@ -380,15 +380,15 @@ cd client && npm install && npm run dev
 | ------ | ------------------- | -------------- |
 | S1     | Parking Marketplace | ✅ Complete     |
 | S2     | Carpooling Network  | ✅ Complete     |
-| S3     | Safety & Trust      | 🔲 In Progress |
+| S3     | Safety & Trust      | ✅ Complete    |
 | S4     | Smart Features      | 🔲 Pending     |
 
 | Teammate | Sprint 1        | Sprint 2        | Sprint 3        | Sprint 4    |
 | -------- | --------------- | --------------- | --------------- | ----------- |
-| Shahriar | F-01 ✅          | F-08 ✅          | F-11 ✅ + F-15 ✅ | F-17        |
+| Shahriar | F-01 ✅          | F-08 ✅          | F-11 ✅ + F-15 ✅ | F-17         |
 | Sushmita | F-02 ✅ + F-05 ✅ | F-06 ✅          | F-14  ✅          | F-16        |
-| Fauzia   | F-03 ✅          | F-07 ✅ + F-09 ✅ | F-12 + F-13 ✅   | F-19 + F-20 |
-| Tasnuva  | F-04 ✅          | F-10 ✅          | F-18  ✅         | F-18        |
+| Fauzia   |   F-07 ✅         | F-09 ✅ | F-12 + F-13 ✅              | F-19       |
+| Tasnuva  | F-03 ✅+  F-04 ✅ | F-10 ✅          | F-18  ✅         | F-20         |
 
 ---
 
