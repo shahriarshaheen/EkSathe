@@ -204,7 +204,7 @@ const HomeownerDashboard = () => {
         const bookings = r.data.data || [];
         const earnings = bookings
           .filter((b) => b.status === "confirmed")
-          .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+          .reduce((sum, b) => sum + (b.finalAmount ?? b.totalPrice ?? 0), 0);
         setStats((prev) => ({
           ...prev,
           totalBookings: bookings.length,
