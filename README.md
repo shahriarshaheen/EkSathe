@@ -385,10 +385,10 @@ cd client && npm install && npm run dev
 
 | Teammate | Sprint 1        | Sprint 2        | Sprint 3        | Sprint 4    |
 | -------- | --------------- | --------------- | --------------- | ----------- |
-| Shahriar | F-01 ✅          | F-08 ✅          | F-11 ✅ + F-15 ✅ | F-17         |
-| Sushmita | F-02 ✅ + F-05 ✅ | F-06 ✅          | F-14  ✅          | F-16        |
-| Fauzia   |   F-07 ✅         | F-09 ✅ | F-12 + F-13 ✅              | F-19       |
-| Tasnuva  | F-03 ✅+  F-04 ✅ | F-10 ✅          | F-18  ✅         | F-20         |
+| Shahriar | F-01 ✅          | F-09 ✅          | F-11 ✅ + F-15 ✅ | F-17 ✅    |
+| Sushmita | F-02 ✅ + F-05 ✅ | F-08 ✅          | F-14  ✅          | F-16       |
+| Fauzia   |   F-06 ✅         |   F-07 ✅         | F-13 ✅          | F-18 + F-19 |
+| Tasnuva  | F-03 ✅+  F-04 ✅ | F-10 ✅          | F-12  ✅         |  F-20         |
 
 ---
 
