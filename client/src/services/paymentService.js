@@ -1,13 +1,17 @@
 import api from "../lib/api.js";
 
-// Parking payment
-export const initiatePayment = async (bookingId) => {
-  const response = await api.post(`/payment/initiate/${bookingId}`);
+// Parking payment — couponCode optional
+export const initiatePayment = async (bookingId, couponCode = null) => {
+  const response = await api.post(`/payment/initiate/${bookingId}`, {
+    couponCode: couponCode || null,
+  });
   return response.data;
 };
 
-// Carpool payment — called after joining a ride
-export const initiateCarpoolPayment = async (routeId) => {
-  const response = await api.post(`/payment/carpool/initiate/${routeId}`);
+// Carpool payment — couponCode optional
+export const initiateCarpoolPayment = async (routeId, couponCode = null) => {
+  const response = await api.post(`/payment/carpool/initiate/${routeId}`, {
+    couponCode: couponCode || null,
+  });
   return response.data;
 };

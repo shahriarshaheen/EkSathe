@@ -15,6 +15,7 @@ import {
   Clock,
   AlertTriangle,
   UserX,
+  Tag,
 } from "lucide-react";
 import DashboardLayout from "../components/ui/DashboardLayout";
 import { useAuth } from "../context/AuthContext";
@@ -27,6 +28,7 @@ export const ADMIN_NAV = [
   { path: "/dashboard/admin/carpool", label: "Carpool Rides", icon: Car },
   { path: "/admin/incidents", label: "Incidents", icon: ShieldAlert },
   { path: "/dashboard/admin/users", label: "User Management", icon: Users },
+  { path: "/dashboard/admin/coupons", label: "Coupons", icon: Tag },
 ];
 
 const StatCard = ({ label, value, sub, icon: Icon, accent, bg, onClick }) => (
@@ -303,11 +305,18 @@ const AdminDashboard = () => {
               bg="bg-green-50"
             />
             <SystemRow
-              icon={Activity}
-              label="Push Notifications"
-              status="Coming Soon"
-              color="text-stone-400"
-              bg="bg-stone-100"
+              icon={TrendingUp}
+              label="Live Trip Sharing"
+              status="Operational"
+              color="text-green-600"
+              bg="bg-green-50"
+            />
+            <SystemRow
+              icon={Tag}
+              label="Coupons & Discounts"
+              status="Operational"
+              color="text-green-600"
+              bg="bg-green-50"
             />
           </div>
 
@@ -368,7 +377,7 @@ const AdminDashboard = () => {
           <h3 className="text-sm font-bold text-stone-700 mb-4 uppercase tracking-widest">
             Quick Actions
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
             {[
               {
                 icon: UserCheck,
@@ -402,6 +411,14 @@ const AdminDashboard = () => {
                 bg: "bg-purple-50",
                 path: "/dashboard/admin/users",
               },
+              {
+                icon: Tag,
+                label: "Coupons",
+                count: "",
+                color: "text-teal-600",
+                bg: "bg-teal-50",
+                path: "/dashboard/admin/coupons",
+              },
             ].map((item) => (
               <div
                 key={item.label}
@@ -414,9 +431,11 @@ const AdminDashboard = () => {
                   <item.icon className={`w-4 h-4 ${item.color}`} />
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-stone-900">
-                    {loading ? "—" : item.count}
-                  </p>
+                  {item.count !== "" && (
+                    <p className="text-lg font-bold text-stone-900">
+                      {loading ? "—" : item.count}
+                    </p>
+                  )}
                   <p className="text-xs text-stone-400">{item.label}</p>
                 </div>
               </div>
