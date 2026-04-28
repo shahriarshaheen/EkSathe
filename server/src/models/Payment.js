@@ -8,28 +8,32 @@ const paymentSchema = new mongoose.Schema(
       enum: ["parking", "carpool"],
       default: "parking",
     },
-
-    // Parking: reference to Booking
     bookingId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
       default: null,
     },
-
-    // Carpool: reference to CarpoolRoute
     carpoolRouteId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "CarpoolRoute",
       default: null,
     },
-
-    // Who is paying
     studentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
+    // Coupon tracking fields — null/0 when no coupon applied
+    couponCode: { type: String, default: null },
+    originalAmount: { type: Number, default: null }, // price before discount
+    discountAmount: { type: Number, default: 0 },
+    couponUsageMarked: {
+      type: Boolean,
+      default: false,
+    },
+
+    // This is the final charged amount (after discount)
     amount: {
       type: Number,
       required: true,
@@ -41,13 +45,11 @@ const paymentSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-
     status: {
       type: String,
       enum: ["initiated", "paid", "failed", "cancelled"],
       default: "initiated",
     },
-
     gatewayResponse: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
