@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import authRoutes from "./authRoutes.js";
 import parkingRoutes from "./parkingRoutes.js";
 import incidentRoutes from "./incidentRoutes.js";
@@ -11,15 +12,17 @@ import carpoolRoutes from "./carpoolRouter.js";
 import ratingRoutes from "./ratingRoutes.js";
 import messageRoutes from "./messageRoutes.js";
 import notificationRoutes from "./notificationRoutes.js";
+import tripShareRoutes from "./tripShareRoutes.js";
+import announcementRoutes from "./announcementRoutes.js";
 
-import tripShareRoutes from './tripShareRoutes.js';
-import announcementRoutes from './announcementRoutes.js'; 
 const router = Router();
 
+// Test route
 router.get("/", (req, res) => {
   res.status(200).json({ message: "EkSathe server is running" });
 });
 
+// Routes
 router.use("/auth", authRoutes);
 router.use("/parking", parkingRoutes);
 router.use("/incidents", incidentRoutes);
@@ -32,8 +35,8 @@ router.use("/carpool", carpoolRoutes);
 router.use("/ratings", ratingRoutes);
 router.use("/messages", messageRoutes);
 router.use("/notifications", notificationRoutes);
-
-export default router;
 router.use("/tripshare", tripShareRoutes);
 router.use("/announcements", announcementRoutes);
+
+// Export (ONLY once, always at the end)
 export default router;

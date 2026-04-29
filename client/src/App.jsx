@@ -277,6 +277,7 @@ const App = () => {
 
           {/* 404 fallback */}
           <Route path="*" element={<Navigate to="/login" replace />} />
+          
         </Routes>
       </AuthProvider>
     </BrowserRouter>

@@ -32,7 +32,7 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 | Admin Moderation Dashboard (F-15)      | ✅ Complete  |
 | Smart Demand Indicator (F-16)          | 🔲 Sprint 4  |
 | Coupons and Discounts (F-17)           | ✅ Complete  |
-| Rider Trust Profile (F-18)             | 🔲 Sprint 4  |
+| Time-Based Check-In  (F-18)            | 🔲 Sprint 4  |
 | Advanced Search & Filter (F-19)        | 🔲 Sprint 4  |
 | Cost Cutting Calculator (F-20)         | 🔲 Sprint 4  |
 
@@ -339,6 +339,21 @@ DELETE /api/announcements/:id
 * System status panel showing all modules
 
 ---
+
+### Time-Based Check-In (F-18)
+
+Prevents no-shows by requiring users to confirm arrival before a ride.
+
+* Users must tap "I've Arrived" within a defined time window (e.g., 5 minutes before departure)
+* If a passenger does not check in, their seat is automatically cancelled
+* Drivers can view check-in status of all passengers
+* Optional reminder notifications sent before check-in window opens
+
+**Endpoints:**
+
+POST   /api/carpool/:id/checkin  
+GET    /api/carpool/:id/checkin-status  
+PATCH  /api/carpool/:id/auto-cancel-no-show
 
 ## Environment Setup
 
