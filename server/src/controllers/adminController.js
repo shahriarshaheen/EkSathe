@@ -227,7 +227,7 @@ export const getStats = async (req, res) => {
       pendingIncidents,
       activeCarpools,
       completedCarpools,
-      revenueAgg,
+      revenueResult,
     ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ role: "student" }),
@@ -252,7 +252,7 @@ export const getStats = async (req, res) => {
       ]),
     ]);
 
-    const totalRevenue = revenueAgg[0]?.total || 0;
+    const totalRevenue = revenueResult[0]?.total || 0;
 
     return res.status(200).json({
       success: true,

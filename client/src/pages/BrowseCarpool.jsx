@@ -8,6 +8,7 @@ import {
   Search,
   X,
   Clock,
+  Loader2,
   Users,
   ChevronDown,
   SlidersHorizontal,
@@ -15,6 +16,7 @@ import {
 import api from "../lib/api";
 import { initiateCarpoolPayment } from "../services/paymentService";
 import { useAuth } from "../context/AuthContext";
+import CouponInput from "../components/CouponInput";
 
 const TAKA = "\u09F3";
 
@@ -109,7 +111,126 @@ function SkeletonCard() {
   );
 }
 
-function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, currentUserId, isSuggested }) {
+function RideCheckoutModal({ route, joining, onClose, onConfirm }) {
+  const [couponState, setCouponState] = useState(null);
+  const finalAmount = couponState?.finalAmount ?? route.pricePerSeat;
+  const routeLabel = `${route.origin.area} ${ARROW} ${route.destination.area}`;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 10, scale: 0.98 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-stone-200"
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
+          <div>
+            <p className="text-xs font-bold text-teal-600 uppercase tracking-widest">
+              Review Ride
+            </p>
+            <h2 className="text-base font-black text-stone-900 mt-0.5">
+              Apply coupon before payment
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={joining === route._id}
+            className="text-stone-400 hover:text-stone-700 transition-colors disabled:opacity-40"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex flex-col items-center gap-1 pt-1">
+                <div className="w-2.5 h-2.5 rounded-full bg-teal-500 ring-2 ring-teal-100" />
+                <div className="w-px h-5 bg-stone-200" />
+                <div className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-stone-900 truncate">
+                  {routeLabel}
+                </p>
+                <p className="text-xs text-stone-500 mt-1">
+                  {new Date(route.departureTime).toLocaleString("en-BD", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+                <p className="text-xs text-stone-400 mt-1">
+                  Driver: {route.driver?.name || "Unknown"}
+                </p>
+              </div>
+              <div className="text-right">
+                {couponState && (
+                  <p className="text-xs text-stone-400 line-through">
+                    {TAKA}
+                    {route.pricePerSeat}
+                  </p>
+                )}
+                <p className="text-xl font-black text-teal-700">
+                  {TAKA}
+                  {finalAmount}
+                </p>
+                <p className="text-xs text-stone-400">per seat</p>
+              </div>
+            </div>
+          </div>
+
+          <CouponInput
+            amount={route.pricePerSeat}
+            serviceType="carpool"
+            onApply={setCouponState}
+            onRemove={() => setCouponState(null)}
+          />
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={joining === route._id}
+              className="px-4 py-2.5 rounded-xl bg-stone-100 text-stone-600 text-sm font-bold hover:bg-stone-200 transition-colors disabled:opacity-50"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(route, couponState?.couponCode || null)}
+              disabled={joining === route._id}
+              className="flex-1 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-black hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {joining === route._id ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Reserving seat...
+                </>
+              ) : (
+                `Join and Pay ${TAKA}${finalAmount}`
+              )}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function RouteCard({
+  route,
+  onJoin,
+  onLeave,
+  onCancel,
+  joining,
+  leaving,
+  currentUserId,
+  isSuggested,
+}) {
   const departure = new Date(route.departureTime);
   const isToday = new Date().toDateString() === departure.toDateString();
   const isTomorrow = new Date(Date.now() + 86400000).toDateString() === departure.toDateString();
@@ -277,7 +398,7 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
         ) : (
           <button
             disabled={isFull || joining === route._id}
-            onClick={() => onJoin(route._id)}
+            onClick={() => onJoin(route)}
             className={`w-full py-3 rounded-xl text-sm font-bold transition-all ${
               isFull ? "bg-stone-100 text-stone-400 cursor-not-allowed" : "bg-teal-600 hover:bg-teal-700 active:scale-95 text-white shadow-sm"
             }`}
@@ -310,6 +431,7 @@ export default function BrowseCarpool() {
   const [leaveSuccess, setLeaveSuccess] = useState("");
   const [cancelSuccess, setCancelSuccess] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [checkoutRoute, setCheckoutRoute] = useState(null);
 
   // Basic filters
   const [fromText, setFromText] = useState("");
@@ -433,22 +555,42 @@ export default function BrowseCarpool() {
     setDepartureWindow("");
   };
 
-  const handleJoin = async (routeId) => {
+  const handleJoin = (route) => {
+    setCheckoutRoute(route);
+    setJoinSuccess("");
+    setError("");
+  };
+
+  const handleConfirmJoin = async (route, couponCode = null) => {
+    const routeId = route._id;
+    let seatReserved = false;
     setJoining(routeId);
     setJoinSuccess("");
     setError("");
     try {
       await api.post(`/carpool/routes/${routeId}/join`, {});
+      seatReserved = true;
       setJoinSuccess("Seat reserved! Redirecting to payment...");
-      try {
-        const payRes = await initiateCarpoolPayment(routeId);
-        if (payRes.url) { window.location.href = payRes.url; return; }
-      } catch { }
-      loadRoutes();
-      setJoinSuccess("You have joined the ride!");
-      setTimeout(() => setJoinSuccess(""), 4000);
+
+      const payRes = await initiateCarpoolPayment(routeId, couponCode);
+      if (payRes.url) {
+        window.location.href = payRes.url;
+        return;
+      }
+
+      throw new Error("Payment could not be started.");
     } catch (err) {
+      if (seatReserved) {
+        try {
+          await api.delete(`/carpool/routes/${routeId}/leave`);
+        } catch {
+          /* best-effort rollback */
+        }
+      }
+      setJoinSuccess("");
       setError(err.message || "Could not join ride.");
+      setCheckoutRoute(null);
+      loadRoutes();
     } finally {
       setJoining(null);
     }
@@ -792,6 +934,17 @@ export default function BrowseCarpool() {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {checkoutRoute && (
+          <RideCheckoutModal
+            route={checkoutRoute}
+            joining={joining}
+            onClose={() => setCheckoutRoute(null)}
+            onConfirm={handleConfirmJoin}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

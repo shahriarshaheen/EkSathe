@@ -54,6 +54,8 @@ import PaymentCancelPage from "./features/payment/pages/PaymentCancelPage";
 import NotificationsPage from "./pages/NotificationsPage";
 //Trip share
 import TripSharePage from "./pages/TripSharePage";
+//coupon
+import AdminCouponsPage from "./pages/AdminCouponsPage";
 
 const App = () => {
   return (
@@ -271,6 +273,15 @@ const App = () => {
 
           {/* Trip Share*/}
           <Route path="/share/:token" element={<TripSharePage />} />
+          {/* Admin coupons */}
+          <Route
+            path="/dashboard/admin/coupons"
+            element={
+              <ProtectedRoute>
+                <AdminCouponsPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Default redirect */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

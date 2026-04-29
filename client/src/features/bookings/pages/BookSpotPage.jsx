@@ -11,6 +11,7 @@ import {
   Car,
   Shield,
   Bell,
+  Star,
 } from "lucide-react";
 import { bookingSchema } from "../schemas/bookingSchema";
 import { createBooking } from "../../../services/bookingService";
@@ -19,6 +20,7 @@ import { parkingService } from "../../../services/parkingService";
 import DashboardLayout from "../../../components/ui/DashboardLayout";
 import FormField from "../../../components/ui/FormField";
 import Button from "../../../components/ui/Button";
+import CouponInput from "../../../components/CouponInput";
 
 const navItems = [
   { path: "/dashboard", label: "Overview", icon: Home },
@@ -45,7 +47,6 @@ const calcPrice = (startTime, endTime, pricePerDay) => {
   const [eh, em] = endTime.split(":").map(Number);
   const hours = (eh * 60 + em - (sh * 60 + sm)) / 60;
   if (hours <= 0) return 0;
-  // pricePerDay / 24 * hours
   return Math.round((pricePerDay / 24) * hours);
 };
 
@@ -55,6 +56,8 @@ export default function BookSpotPage() {
   const [loading, setLoading] = useState(false);
   const [spot, setSpot] = useState(null);
   const [spotLoading, setSpotLoading] = useState(true);
+  // Coupon state — { couponCode, discountAmount, finalAmount }
+  const [couponState, setCouponState] = useState(null);
 
   useEffect(() => {
     const fetchSpot = async () => {
@@ -76,11 +79,21 @@ export default function BookSpotPage() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(bookingSchema) });
+  } = useForm({
+    resolver: zodResolver(bookingSchema),
+  });
 
   const startTime = watch("startTime");
   const endTime = watch("endTime");
   const totalPrice = spot ? calcPrice(startTime, endTime, spot.pricePerDay) : 0;
+  const finalPrice = couponState ? couponState.finalAmount : totalPrice;
+
+  useEffect(() => {
+    setCouponState(null);
+  }, [totalPrice]);
+
+  const handleCouponApply = (data) => setCouponState(data);
+  const handleCouponRemove = () => setCouponState(null);
 
   const onSubmit = async (data) => {
     if (totalPrice <= 0) {
@@ -90,7 +103,6 @@ export default function BookSpotPage() {
 
     setLoading(true);
     try {
-      // Create booking with real spot data
       const bookingRes = await createBooking({
         ...data,
         spotId: spot._id,
@@ -99,13 +111,14 @@ export default function BookSpotPage() {
       });
       const bookingId = bookingRes.data._id;
 
-      // Initiate payment
-      const paymentRes = await initiatePayment(bookingId);
-      if (paymentRes.url) {
-        window.location.href = paymentRes.url;
-      }
+      // Pass coupon code — backend re-validates before charging
+      const paymentRes = await initiatePayment(
+        bookingId,
+        couponState?.couponCode || null,
+      );
+      if (paymentRes.url) window.location.href = paymentRes.url;
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Something went wrong");
+      toast.error(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -150,6 +163,12 @@ export default function BookSpotPage() {
               ৳{spot.pricePerDay} / day · Available {spot.availableFrom} –{" "}
               {spot.availableTo}
             </p>
+            {spot.owner?.trustScore != null && (
+              <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                Host trust score: {spot.owner.trustScore}
+              </p>
+            )}
           </div>
         </div>
 
@@ -162,7 +181,6 @@ export default function BookSpotPage() {
               error={errors.date?.message}
               {...register("date")}
             />
-
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 label="Start Time"
@@ -178,9 +196,13 @@ export default function BookSpotPage() {
               />
             </div>
 
+            {/* Price display */}
             <div
-              className={`rounded-xl px-4 py-3 flex items-center justify-between
-              ${totalPrice > 0 ? "bg-teal-50 border border-teal-100" : "bg-stone-50 border border-stone-100"}`}
+              className={`rounded-xl px-4 py-3 flex items-center justify-between ${
+                totalPrice > 0
+                  ? "bg-teal-50 border border-teal-100"
+                  : "bg-stone-50 border border-stone-100"
+              }`}
             >
               <div className="flex items-center gap-2 text-sm text-stone-600">
                 <Clock className="w-4 h-4 text-stone-400" />
@@ -188,15 +210,35 @@ export default function BookSpotPage() {
                   ? `${startTime} — ${endTime}`
                   : "Select start and end time"}
               </div>
-              <p
-                className={`text-sm font-bold ${totalPrice > 0 ? "text-teal-700" : "text-stone-400"}`}
-              >
-                {totalPrice > 0 ? `৳${totalPrice}` : "৳0"}
-              </p>
+              <div className="text-right">
+                {couponState && totalPrice > 0 && (
+                  <p className="text-xs text-stone-400 line-through">
+                    ৳{totalPrice}
+                  </p>
+                )}
+                <p
+                  className={`text-sm font-bold ${totalPrice > 0 ? "text-teal-700" : "text-stone-400"}`}
+                >
+                  {totalPrice > 0 ? `৳${finalPrice}` : "৳0"}
+                </p>
+              </div>
             </div>
 
+            {/* Coupon input — only show when price is calculated */}
+            {totalPrice > 0 && (
+              <CouponInput
+                key={totalPrice}
+                amount={totalPrice}
+                serviceType="parking"
+                onApply={handleCouponApply}
+                onRemove={handleCouponRemove}
+              />
+            )}
+
             <Button type="submit" loading={loading}>
-              Proceed to Payment
+              {couponState
+                ? `Pay ৳${finalPrice} (saved ৳${couponState.discountAmount})`
+                : "Proceed to Payment"}
             </Button>
           </form>
         </div>

@@ -192,8 +192,22 @@ export default function MyBookingsPage() {
                           {booking.startTime} — {booking.endTime}
                         </span>
                         <span className="flex items-center gap-1.5 font-bold text-teal-600">
-                          <MapPin className="w-3.5 h-3.5" />৳
-                          {booking.totalPrice}
+                          <MapPin className="w-3.5 h-3.5" />
+                          {booking.discountAmount > 0 ? (
+                            <span className="flex items-center gap-1.5">
+                              <span className="text-stone-400 line-through text-xs font-normal">
+                                ৳{booking.totalPrice}
+                              </span>
+                              <span>
+                                ৳{booking.finalAmount ?? booking.totalPrice}
+                              </span>
+                              <span className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full font-semibold">
+                                Coupon applied
+                              </span>
+                            </span>
+                          ) : (
+                            <span>৳{booking.totalPrice}</span>
+                          )}
                         </span>
                       </div>
 
