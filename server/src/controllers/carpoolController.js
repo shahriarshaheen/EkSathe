@@ -15,17 +15,57 @@ export const getPresetRoutes = (req, res) => {
   res.json({ success: true, data: UNIVERSITY_ROUTES });
 };
 
+// ── GET ROUTES (F-19: Advanced Search & Filter) ──────────────
 export const getRoutes = async (req, res) => {
   try {
-    const { genderSafe, presetRouteId } = req.query;
+    const {
+      genderSafe,
+      presetRouteId,
+      // F-19 new params
+      maxPrice,
+      minSeats,
+      departureAfter,
+      departureBefore,
+    } = req.query;
 
     const filter = {
       status: "open",
       departureTime: { $gte: new Date() },
     };
 
+    // Existing filters
     if (genderSafe === "true") filter.genderSafe = true;
     if (presetRouteId) filter.presetRouteId = presetRouteId;
+
+    // F-19: Max price per seat
+    if (maxPrice !== undefined && maxPrice !== "" && Number(maxPrice) < 500) {
+      filter.pricePerSeat = { $lte: Number(maxPrice) };
+    }
+
+    // F-19: Minimum available seats
+    if (minSeats !== undefined && minSeats !== "" && Number(minSeats) > 1) {
+      filter.availableSeats = { $gte: Number(minSeats) };
+    }
+
+    // F-19: Departure time window
+    // departureAfter and departureBefore are ISO strings
+    // We merge with the existing $gte: new Date() on departureTime
+    if (departureAfter && departureAfter.trim()) {
+      const afterDate = new Date(departureAfter);
+      // Keep whichever is later between "now" and the requested after time
+      if (!isNaN(afterDate)) {
+        filter.departureTime.$gte =
+          afterDate > filter.departureTime.$gte
+            ? afterDate
+            : filter.departureTime.$gte;
+      }
+    }
+    if (departureBefore && departureBefore.trim()) {
+      const beforeDate = new Date(departureBefore);
+      if (!isNaN(beforeDate)) {
+        filter.departureTime.$lte = beforeDate;
+      }
+    }
 
     const routes = await CarpoolRoute.find(filter)
       .populate("driver", "name trustScore photoUrl")
@@ -122,9 +162,6 @@ export const joinRoute = async (req, res) => {
     const windowEnd = new Date(deptTime.getTime() + 2 * 60 * 60 * 1000);
     const now = new Date();
 
-    // FIX: removed duplicate $gte key — now correctly checks window AND future-only
-    // Previous code had { $gte: new Date(), $gte: windowStart } which silently
-    // dropped the first $gte, making windowStart the only filter (ignoring future check)
     const conflictingRide = await CarpoolRoute.findOne({
       $or: [{ driver: req.user.id }, { passengers: req.user.id }],
       status: { $in: ["open", "full"] },
@@ -177,12 +214,10 @@ export const leaveRoute = async (req, res) => {
       (p) => p.toString() === req.user.id.toString(),
     );
     if (index === -1)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "You are not a passenger on this ride.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "You are not a passenger on this ride.",
+      });
 
     route.passengers.splice(index, 1);
     route.availableSeats += 1;
@@ -222,12 +257,10 @@ export const cancelRoute = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Route not found." });
     if (route.driver.toString() !== req.user.id.toString())
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Only the driver can cancel this ride.",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Only the driver can cancel this ride.",
+      });
     if (route.status === "cancelled")
       return res
         .status(400)

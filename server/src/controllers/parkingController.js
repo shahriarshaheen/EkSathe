@@ -57,7 +57,7 @@ export const createSpot = async (req, res) => {
   }
 };
 
-// ── GET ALL SPOTS ────────────────────────────────────────────
+// ── GET ALL SPOTS (F-19: Advanced Search & Filter) ───────────
 export const getSpots = async (req, res) => {
   try {
     const {
@@ -66,14 +66,57 @@ export const getSpots = async (req, res) => {
       radius = 5000,
       page = 1,
       limit = 12,
+      // F-19 new params
+      search,
+      priceMin,
+      priceMax,
+      availableDay,
+      availableFrom,
+      availableTo,
     } = req.query;
 
-    let query = { isActive: true };
+    // ── Build dynamic filter ──────────────────────────────────
+
+    const filter = { isActive: true };
+
+    // Text search on title and address
+    if (search && search.trim()) {
+      const regex = new RegExp(search.trim(), "i");
+      filter.$or = [{ title: regex }, { address: regex }];
+    }
+
+    // Price range — model field is pricePerDay
+    if (priceMin !== undefined && priceMin !== "") {
+      filter.pricePerDay = { ...filter.pricePerDay, $gte: parseFloat(priceMin) };
+    }
+    if (priceMax !== undefined && priceMax !== "") {
+      filter.pricePerDay = { ...filter.pricePerDay, $lte: parseFloat(priceMax) };
+    }
+
+    // Available day — model stores availableDays as a flat string array
+    // e.g. ["monday", "tuesday", "friday"]
+    if (availableDay && availableDay.trim()) {
+      filter.availableDays = availableDay.toLowerCase().trim();
+    }
+
+    // Time window — model has top-level availableFrom / availableTo strings (HH:MM)
+    // We filter spots whose window contains the requested window
+    if (availableFrom && availableFrom.trim()) {
+      // spot must open at or before requested start
+      filter.availableFrom = { $lte: availableFrom.trim() };
+    }
+    if (availableTo && availableTo.trim()) {
+      // spot must close at or after requested end
+      filter.availableTo = { $gte: availableTo.trim() };
+    }
+
+    // ── Geo or plain query ────────────────────────────────────
+
     let spots;
 
     if (latitude && longitude) {
       spots = await ParkingSpot.find({
-        ...query,
+        ...filter,
         location: {
           $near: {
             $geometry: {
@@ -88,14 +131,14 @@ export const getSpots = async (req, res) => {
         .skip((page - 1) * limit)
         .limit(parseInt(limit));
     } else {
-      spots = await ParkingSpot.find(query)
+      spots = await ParkingSpot.find(filter)
         .populate("owner", "name email trustScore")
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(parseInt(limit));
     }
 
-    const total = await ParkingSpot.countDocuments(query);
+    const total = await ParkingSpot.countDocuments(filter);
 
     return res.status(200).json({
       success: true,

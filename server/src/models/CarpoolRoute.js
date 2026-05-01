@@ -2,10 +2,10 @@ import mongoose from "mongoose";
 
 const locationSchema = new mongoose.Schema(
   {
-    name:  { type: String, required: true },
-    area:  { type: String, required: true },
-    lat:   { type: Number, required: true },
-    lng:   { type: Number, required: true },
+    name: { type: String, required: true },
+    area: { type: String, required: true },
+    lat:  { type: Number, required: true },
+    lng:  { type: Number, required: true },
   },
   { _id: false }
 );
@@ -21,8 +21,8 @@ const carpoolRouteSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    origin:      { type: locationSchema, required: true },
-    destination: { type: locationSchema, required: true },
+    origin:        { type: locationSchema, required: true },
+    destination:   { type: locationSchema, required: true },
     departureTime: { type: Date, required: true },
     totalSeats: {
       type: Number,
@@ -60,8 +60,7 @@ const carpoolRouteSchema = new mongoose.Schema(
       default: "",
     },
 
-    // ─── F-14: Route Deviation Alert ────────────────────────────────
-    // Stored when driver taps "Start Ride". Array of {lat, lng} points.
+    // ─── F-14: Route Deviation Alert ─────────────────────────────────
     plannedPolyline: {
       type: [
         {
@@ -71,15 +70,32 @@ const carpoolRouteSchema = new mongoose.Schema(
       ],
       default: [],
     },
-    // True while driver is actively sharing location (trip in progress)
     tripActive: {
       type: Boolean,
       default: false,
     },
-    // Timestamp when trip was started
     tripStartedAt: {
       type: Date,
       default: null,
+    },
+
+    // ─── F-18: Check-In ───────────────────────────────────────────────
+    // Each entry records a passenger who tapped "I've Arrived"
+    checkins: {
+      type: [
+        {
+          userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+          },
+          checkedInAt: {
+            type: Date,
+            default: Date.now,
+          },
+        },
+      ],
+      default: [],
     },
   },
   { timestamps: true }
