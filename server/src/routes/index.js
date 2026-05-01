@@ -1,5 +1,4 @@
 import { Router } from "express";
-
 import authRoutes from "./authRoutes.js";
 import parkingRoutes from "./parkingRoutes.js";
 import incidentRoutes from "./incidentRoutes.js";
@@ -17,12 +16,10 @@ import announcementRoutes from "./announcementRoutes.js";
 import couponRoutes from "./couponRoutes.js";
 const router = Router();
 
-// Test route
 router.get("/", (req, res) => {
   res.status(200).json({ message: "EkSathe server is running" });
 });
 
-// Routes
 router.use("/auth", authRoutes);
 router.use("/parking", parkingRoutes);
 router.use("/incidents", incidentRoutes);

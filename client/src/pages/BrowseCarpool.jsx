@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,6 +20,7 @@ const UNIVERSITIES = [
   "Jahangirnagar University", "Stamford University",
 ];
 
+// Map university names to preset destination keywords
 const UNI_KEYWORDS = {
   NSU: ["bashundhara", "nsu", "north south"],
   BUET: ["palashi", "buet"],
@@ -69,6 +70,7 @@ function SeatDots({ total, available }) {
   );
 }
 
+// Skeleton card for loading state
 function SkeletonCard() {
   return (
     <div className="bg-white rounded-2xl border border-stone-100 p-5 animate-pulse">
@@ -273,7 +275,8 @@ function RideCheckoutModal({ route, joining, onClose, onConfirmOnline, onConfirm
 function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, currentUserId, isSuggested }) {
   const departure = new Date(route.departureTime);
   const isToday = new Date().toDateString() === departure.toDateString();
-  const isTomorrow = new Date(Date.now() + 86400000).toDateString() === departure.toDateString();
+  const isTomorrow =
+    new Date(Date.now() + 86400000).toDateString() === departure.toDateString();
   const isFull = route.status === "full";
   const isCancelled = route.status === "cancelled";
   const isDriver = route.driver?._id === currentUserId || route.driver?.id === currentUserId;
@@ -301,6 +304,7 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
           : "bg-gradient-to-r from-stone-300 to-stone-200"
       }`} />
 
+      {/* Suggested badge */}
       {isSuggested && (
         <div className="px-5 pt-3 pb-0">
           <span className="text-xs font-bold text-teal-600 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
@@ -313,6 +317,7 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
         {/* Route + price */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">
+            {/* Timeline dots */}
             <div className="flex flex-col items-center gap-0.5 flex-shrink-0 mt-1">
               <div className="w-2.5 h-2.5 rounded-full bg-teal-500 ring-2 ring-teal-100" />
               <div className="w-px h-5 bg-stone-200" />
@@ -320,12 +325,20 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
             </div>
             <div className="flex flex-col gap-2 flex-1 min-w-0">
               <div>
-                <p className="text-sm font-bold text-stone-900 truncate">{route.origin.area}</p>
-                <p className="text-xs text-stone-400 truncate">{route.origin.name}</p>
+                <p className="text-sm font-bold text-stone-900 truncate">
+                  {route.origin.area}
+                </p>
+                <p className="text-xs text-stone-400 truncate">
+                  {route.origin.name}
+                </p>
               </div>
               <div>
-                <p className="text-sm font-bold text-stone-900 truncate">{route.destination.area}</p>
-                <p className="text-xs text-stone-400 truncate">{route.destination.name}</p>
+                <p className="text-sm font-bold text-stone-900 truncate">
+                  {route.destination.area}
+                </p>
+                <p className="text-xs text-stone-400 truncate">
+                  {route.destination.name}
+                </p>
               </div>
             </div>
           </div>
@@ -356,7 +369,10 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
           <div className="flex items-center gap-1.5 text-xs text-stone-600">
             <Clock className="w-3.5 h-3.5 text-stone-400" />
             <span className="font-bold">
-              {departure.toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" })}
+              {departure.toLocaleTimeString("en-BD", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </span>
             <span className="text-stone-400">{dayLabel}</span>
           </div>
@@ -364,7 +380,10 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
           <div className="flex items-center gap-1.5 text-xs text-stone-600">
             <Users className="w-3.5 h-3.5 text-stone-400" />
             <span className="font-bold">{route.availableSeats} left</span>
-            <SeatDots total={route.totalSeats} available={route.availableSeats} />
+            <SeatDots
+              total={route.totalSeats}
+              available={route.availableSeats}
+            />
           </div>
           <div className="ml-auto">
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
@@ -382,7 +401,11 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
           <div className="flex items-center gap-3 mb-4">
             <div className="w-9 h-9 rounded-full overflow-hidden bg-teal-50 flex-shrink-0 shadow-sm">
               {route.driver.photoUrl ? (
-                <img src={route.driver.photoUrl} alt={route.driver.name} className="w-full h-full object-cover" />
+                <img
+                  src={route.driver.photoUrl}
+                  alt={route.driver.name}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-bold text-sm">
                   {route.driver.name?.[0]?.toUpperCase() || "?"}
@@ -390,15 +413,25 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-stone-800">{route.driver.name}</p>
+              <p className="text-sm font-bold text-stone-800">
+                {route.driver.name}
+              </p>
               <p className="text-xs text-stone-400">Driver</p>
             </div>
             {route.driver.trustScore != null && (
               <div className="flex items-center gap-1 bg-amber-50 border border-amber-100 rounded-xl px-2.5 py-1">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="#f59e0b" stroke="none">
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="#f59e0b"
+                  stroke="none"
+                >
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
-                <span className="text-xs font-black text-amber-700">{route.driver.trustScore}</span>
+                <span className="text-xs font-black text-amber-700">
+                  {route.driver.trustScore}
+                </span>
               </div>
             )}
           </div>
@@ -407,7 +440,17 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
         {/* Notes */}
         {route.notes && (
           <div className="bg-stone-50 rounded-xl px-3 py-2 mb-4 flex items-start gap-2">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#a8a29e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#a8a29e"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="flex-shrink-0 mt-0.5"
+            >
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
             <p className="text-xs text-stone-500 italic">{route.notes}</p>
@@ -421,7 +464,10 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
               Your ride
             </div>
             {!isCancelled && (
-              <button onClick={() => onCancel(route._id)} className="w-full py-2 rounded-xl bg-red-50 border border-red-200 text-xs font-bold text-red-500 hover:bg-red-100 transition-all">
+              <button
+                onClick={() => onCancel(route._id)}
+                className="w-full py-2 rounded-xl bg-red-50 border border-red-200 text-xs font-bold text-red-500 hover:bg-red-100 transition-all"
+              >
                 Cancel Ride
               </button>
             )}
@@ -433,7 +479,16 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
         ) : isPassenger ? (
           <div className="space-y-2">
             <div className="w-full py-2.5 rounded-xl bg-teal-50 border border-teal-200 text-sm font-bold text-teal-600 text-center flex items-center justify-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               Joined
@@ -454,12 +509,24 @@ function RouteCard({ route, onJoin, onLeave, onCancel, joining, leaving, current
           >
             {joining === route._id ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  className="animate-spin"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M21 12a9 9 0 11-6.219-8.56" />
                 </svg>
                 Joining...
               </span>
-            ) : "Join Ride"}
+            ) : (
+              "Join Ride"
+            )}
           </button>
         )}
       </div>
@@ -499,9 +566,12 @@ export default function BrowseCarpool() {
     try {
       const token = localStorage.getItem("eksathe_token");
       return JSON.parse(atob(token?.split(".")[1] || ""))?.id;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   });
 
+  // Get user's university name from their profile
   const userUniName = user?.university
     ? UNIVERSITIES.find((u) =>
         u.toLowerCase().includes(user.university?.toLowerCase?.()) ||
@@ -509,7 +579,10 @@ export default function BrowseCarpool() {
     : null;
 
   useEffect(() => {
-    api.get("/carpool/presets").then((r) => setPresets(r.data.data)).catch(() => {});
+    api
+      .get("/carpool/presets")
+      .then((r) => setPresets(r.data.data))
+      .catch(() => {});
     loadRoutes();
   }, []);
 
@@ -562,14 +635,20 @@ export default function BrowseCarpool() {
     return matchFrom && matchTo && matchUni;
   });
 
+  // Suggested rides — match user's university destination keywords
   const suggestedRoutes = userUniName
     ? filteredRoutes.filter((r) => {
         const keywords = UNI_KEYWORDS[userUniName] || [];
-        const dest = (r.destination.name + " " + r.destination.area).toLowerCase();
+        const dest = (
+          r.destination.name +
+          " " +
+          r.destination.area
+        ).toLowerCase();
         return keywords.some((kw) => dest.includes(kw));
       })
     : [];
 
+  // Other rides — everything not in suggested
   const suggestedIds = new Set(suggestedRoutes.map((r) => r._id));
   const otherRoutes = filteredRoutes.filter((r) => !suggestedIds.has(r._id));
   const hasActiveFilters = fromText || toText || genderSafe || uniFilter !== "All" || maxPrice < 500 || minSeats || departureWindow;
@@ -665,11 +744,21 @@ export default function BrowseCarpool() {
     }
   };
 
+  const clearAll = () => {
+    setFromText("");
+    setToText("");
+    setGenderSafe(false);
+    setUniFilter("All");
+  };
+
   return (
     <div className="min-h-screen dashboard-bg">
       <header className="bg-white/90 backdrop-blur-sm border-b border-stone-200 sticky top-0 z-20">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button onClick={() => navigate("/dashboard")} className="p-1.5 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="p-1.5 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors"
+          >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2">
@@ -679,12 +768,20 @@ export default function BrowseCarpool() {
             <span className="font-bold text-stone-900 text-sm">EkSathe</span>
           </div>
           <span className="text-stone-300">·</span>
-          <span className="text-sm font-semibold text-stone-600">Carpooling</span>
+          <span className="text-sm font-semibold text-stone-600">
+            Carpooling
+          </span>
           <div className="ml-auto flex items-center gap-2">
-            <button onClick={() => navigate("/dashboard/carpool/my-rides")} className="text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors px-2 py-1.5">
+            <button
+              onClick={() => navigate("/dashboard/carpool/my-rides")}
+              className="text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors px-2 py-1.5"
+            >
               My Rides
             </button>
-            <button onClick={() => navigate("/dashboard/carpool/post")} className="flex items-center gap-1.5 bg-teal-600 text-white text-xs font-bold px-3 py-2 rounded-xl hover:bg-teal-700 transition-colors">
+            <button
+              onClick={() => navigate("/dashboard/carpool/post")}
+              className="flex items-center gap-1.5 bg-teal-600 text-white text-xs font-bold px-3 py-2 rounded-xl hover:bg-teal-700 transition-colors"
+            >
               <Plus className="w-3.5 h-3.5" />
               Post Ride
             </button>
@@ -781,7 +878,8 @@ export default function BrowseCarpool() {
 
           {!loading && (
             <p className="text-xs text-stone-400 mt-2.5">
-              {filteredRoutes.length} ride{filteredRoutes.length !== 1 ? "s" : ""} available
+              {filteredRoutes.length} ride
+              {filteredRoutes.length !== 1 ? "s" : ""} available
               {userUniName && suggestedRoutes.length > 0 && (
                 <span className="text-teal-600 font-semibold"> · {suggestedRoutes.length} near {userUniName}</span>
               )}
@@ -830,16 +928,31 @@ export default function BrowseCarpool() {
           </motion.div>
         ) : (
           <div className="space-y-6">
+            {/* Suggested for you */}
             {suggestedRoutes.length > 0 && !hasActiveFilters && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Suggested for you</p>
+                  <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                    Suggested for you
+                  </p>
                   <div className="flex-1 h-px bg-stone-100" />
-                  <span className="text-xs text-teal-600 font-semibold">{userUniName}</span>
+                  <span className="text-xs text-teal-600 font-semibold">
+                    {userUniName}
+                  </span>
                 </div>
                 <div className="space-y-3">
                   {suggestedRoutes.map((r) => (
-                    <RouteCard key={r._id} route={r} isSuggested onJoin={handleJoin} onLeave={handleLeave} onCancel={handleCancel} joining={joining} leaving={leaving} currentUserId={currentUserId} />
+                    <RouteCard
+                      key={r._id}
+                      route={r}
+                      isSuggested
+                      onJoin={handleJoin}
+                      onLeave={handleLeave}
+                      onCancel={handleCancel}
+                      joining={joining}
+                      leaving={leaving}
+                      currentUserId={currentUserId}
+                    />
                   ))}
                 </div>
               </div>
@@ -848,14 +961,28 @@ export default function BrowseCarpool() {
               <div>
                 {suggestedRoutes.length > 0 && !hasActiveFilters && (
                   <div className="flex items-center gap-2 mb-3">
-                    <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Other rides</p>
+                    <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                      Other rides
+                    </p>
                     <div className="flex-1 h-px bg-stone-100" />
                   </div>
                 )}
                 <div className="space-y-3">
-                  {(hasActiveFilters ? filteredRoutes : otherRoutes).map((r) => (
-                    <RouteCard key={r._id} route={r} isSuggested={false} onJoin={handleJoin} onLeave={handleLeave} onCancel={handleCancel} joining={joining} leaving={leaving} currentUserId={currentUserId} />
-                  ))}
+                  {(hasActiveFilters ? filteredRoutes : otherRoutes).map(
+                    (r) => (
+                      <RouteCard
+                        key={r._id}
+                        route={r}
+                        isSuggested={false}
+                        onJoin={handleJoin}
+                        onLeave={handleLeave}
+                        onCancel={handleCancel}
+                        joining={joining}
+                        leaving={leaving}
+                        currentUserId={currentUserId}
+                      />
+                    ),
+                  )}
                 </div>
               </div>
             )}
