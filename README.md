@@ -2,7 +2,6 @@
 
 EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility platform built for Dhaka's students. It connects students with homeowners who have idle parking spaces, enables verified carpooling, and provides commute safety tools — all in one platform.
 
-> Built as a Software Engineering university project using the MERN stack.
 
 ---
 
