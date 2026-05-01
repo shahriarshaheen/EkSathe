@@ -29,11 +29,11 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 | Live Trip Sharing (F-13)               | ✅ Complete  |
 | Homeowner Announcement (F-14)          | ✅ Complete  |
 | Admin Moderation Dashboard (F-15)      | ✅ Complete  |
-| Smart Demand Indicator (F-16)          | 🔲 Sprint 4  |
+| Coins and Leadership  (F-16)           | 🔲 Sprint 4  |
 | Coupons and Discounts (F-17)           | ✅ Complete  |
-| Time-Based Check-In  (F-18)            | 🔲 Sprint 4  |
-| Advanced Search & Filter (F-19)        | 🔲 Sprint 4  |
-| Cost Cutting Calculator (F-20)         | 🔲 Sprint 4  |
+| Time-Based Check-In  (F-18)            | ✅ Complete  |
+| Advanced Search & Filter (F-19)        | ✅ Complete  |
+| Cost Cutting Calculator (F-20)         | ✅ Complete  |
 
 ---
 
