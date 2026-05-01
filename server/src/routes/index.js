@@ -14,7 +14,6 @@ import messageRoutes from "./messageRoutes.js";
 import notificationRoutes from "./notificationRoutes.js";
 import tripShareRoutes from "./tripShareRoutes.js";
 import announcementRoutes from "./announcementRoutes.js";
-import couponRoutes from "./couponRoutes.js";
 const router = Router();
 
 // Test route
