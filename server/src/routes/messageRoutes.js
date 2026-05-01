@@ -9,7 +9,7 @@ import authenticate from "../middleware/authenticate.js";
 
 const router = express.Router();
 
-router.get("/unread/bulk", authenticate, getBulkUnreadCounts);
+router.post("/unread/bulk", authenticate, getBulkUnreadCounts);
 router.get("/unread/:contextType/:contextId", authenticate, getUnreadCount);
 router.get("/:contextType/:contextId", authenticate, getMessages);
 router.post("/:contextType/:contextId", authenticate, sendMessage);
