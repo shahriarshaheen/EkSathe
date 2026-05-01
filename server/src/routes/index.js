@@ -37,6 +37,7 @@ router.use("/messages", messageRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/tripshare", tripShareRoutes);
 router.use("/announcements", announcementRoutes);
+router.use("/coupons", couponRoutes);
 
 // Export (ONLY once, always at the end)
 export default router;
