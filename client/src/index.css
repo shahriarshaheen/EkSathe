@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-stone-50 text-stone-900;
+    margin: 0;
+    font-family: "DM Sans", sans-serif;
+  }
+}
+
+/* OTP character boxes — monospaced for uniform digit width */
+input[inputmode="numeric"] {
+  font-family: "DM Mono", monospace;
+}
