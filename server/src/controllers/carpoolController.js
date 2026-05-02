@@ -1,5 +1,7 @@
 import CarpoolRoute from "../models/CarpoolRoute.js";
 import UNIVERSITY_ROUTES from "../config/universityRoutes.js";
+import User from "../models/User.js";
+import { sendPush } from "../services/pushService.js";
 
 const autoCompleteExpiredRides = async () => {
   await CarpoolRoute.updateMany(
@@ -15,13 +17,11 @@ export const getPresetRoutes = (req, res) => {
   res.json({ success: true, data: UNIVERSITY_ROUTES });
 };
 
-// ── GET ROUTES (F-19: Advanced Search & Filter) ──────────────
 export const getRoutes = async (req, res) => {
   try {
     const {
       genderSafe,
       presetRouteId,
-      // F-19 new params
       maxPrice,
       minSeats,
       departureAfter,
@@ -33,26 +33,19 @@ export const getRoutes = async (req, res) => {
       departureTime: { $gte: new Date() },
     };
 
-    // Existing filters
     if (genderSafe === "true") filter.genderSafe = true;
     if (presetRouteId) filter.presetRouteId = presetRouteId;
 
-    // F-19: Max price per seat
     if (maxPrice !== undefined && maxPrice !== "" && Number(maxPrice) < 500) {
       filter.pricePerSeat = { $lte: Number(maxPrice) };
     }
 
-    // F-19: Minimum available seats
     if (minSeats !== undefined && minSeats !== "" && Number(minSeats) > 1) {
       filter.availableSeats = { $gte: Number(minSeats) };
     }
 
-    // F-19: Departure time window
-    // departureAfter and departureBefore are ISO strings
-    // We merge with the existing $gte: new Date() on departureTime
     if (departureAfter && departureAfter.trim()) {
       const afterDate = new Date(departureAfter);
-      // Keep whichever is later between "now" and the requested after time
       if (!isNaN(afterDate)) {
         filter.departureTime.$gte =
           afterDate > filter.departureTime.$gte
@@ -188,6 +181,43 @@ export const joinRoute = async (req, res) => {
       "driver passengers",
       "name trustScore photoUrl",
     );
+
+    const routeLabel = `${route.origin.area} → ${route.destination.area}`;
+    const departureStr = new Date(route.departureTime).toLocaleString("en-BD", {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    });
+
+    // Push to driver — new passenger joined
+    try {
+      const passenger = await User.findById(req.user.id).select("name");
+      const driver = await User.findById(route.driver).select("+fcmToken");
+      await sendPush(
+        driver._id,
+        driver?.fcmToken,
+        "New Passenger Joined",
+        `${passenger?.name || "A student"} joined your ride: ${routeLabel} on ${departureStr}`,
+        "new_passenger",
+        { routeId: route._id.toString() },
+      );
+    } catch (pushErr) {
+      console.warn("Push to driver failed:", pushErr.message);
+    }
+
+    // Push to passenger — covers both cash and online payment paths
+    try {
+      const passengerUser = await User.findById(req.user.id).select("+fcmToken");
+      await sendPush(
+        req.user.id,
+        passengerUser?.fcmToken,
+        "Ride Joined Successfully",
+        `You have joined the ride: ${routeLabel} on ${departureStr}. Pay the driver in cash when you board.`,
+        "carpool_joined",
+        { routeId: route._id.toString() },
+      );
+    } catch (pushErr) {
+      console.warn("Push to passenger failed:", pushErr.message);
+    }
+
     res.json({ success: true, data: populated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

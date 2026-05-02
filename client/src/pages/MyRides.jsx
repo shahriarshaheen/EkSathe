@@ -23,7 +23,7 @@ const navItems = [
   { path: "/dashboard/parking", label: "Find Parking", icon: MapPin },
   { path: "/dashboard/carpool", label: "Carpooling",   icon: Car    },
   { path: "/dashboard/sos",     label: "SOS & Safety", icon: Shield },
-  { path: "/dashboard/notifications", label: "Notifications", icon: Bell, soon: true },
+  { path: "/dashboard/notifications", label: "Notifications", icon: Bell },
 ];
 
 const statusStyle = {

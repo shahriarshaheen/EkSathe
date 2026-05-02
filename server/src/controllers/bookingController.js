@@ -40,7 +40,7 @@ export const createBooking = async (req, res) => {
       totalPrice,
     });
 
-    // Push notification to homeowner — saves to DB + sends FCM
+    // Push notification to homeowner
     try {
       const homeowner = await User.findById(homeownerId).select("+fcmToken");
       await sendPush(
@@ -51,7 +51,20 @@ export const createBooking = async (req, res) => {
         "booking_request",
         { bookingId: booking._id.toString() }
       );
-    } catch { /* silent — never crash the booking */ }
+    } catch { /* silent */ }
+
+    // Push confirmation to student — covers cash payment path
+    try {
+      const student = await User.findById(req.user.id).select("+fcmToken");
+      await sendPush(
+        req.user.id,
+        student?.fcmToken || null,
+        "Booking Confirmed",
+        `Your booking for ${date} from ${startTime} to ${endTime} is confirmed. Pay the homeowner in cash when you arrive.`,
+        "booking_confirmed",
+        { bookingId: booking._id.toString() }
+      );
+    } catch { /* silent */ }
 
     return res.status(201).json({ success: true, data: booking });
   } catch (err) {

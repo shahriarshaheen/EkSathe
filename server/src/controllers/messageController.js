@@ -1,6 +1,8 @@
 import Message from "../models/Message.js";
 import CarpoolRoute from "../models/CarpoolRoute.js";
 import Booking from "../models/Booking.js";
+import User from "../models/User.js";
+import { sendPush } from "../services/pushService.js";
 
 const isParticipant = async (contextType, contextId, userId) => {
   if (contextType === "carpool") {
@@ -22,6 +24,29 @@ const isParticipant = async (contextType, contextId, userId) => {
   return false;
 };
 
+// Get all other participant IDs in a conversation except the sender
+const getOtherParticipants = async (contextType, contextId, senderId) => {
+  if (contextType === "carpool") {
+    const ride = await CarpoolRoute.findById(contextId);
+    if (!ride) return [];
+    const allIds = [
+      ride.driver.toString(),
+      ...ride.passengers.map((p) => p.toString()),
+    ];
+    return allIds.filter((id) => id !== senderId.toString());
+  }
+  if (contextType === "parking") {
+    const booking = await Booking.findById(contextId);
+    if (!booking) return [];
+    const allIds = [
+      booking.studentId.toString(),
+      booking.homeownerId.toString(),
+    ];
+    return allIds.filter((id) => id !== senderId.toString());
+  }
+  return [];
+};
+
 // GET /api/messages/:contextType/:contextId
 export const getMessages = async (req, res) => {
   try {
@@ -29,12 +54,10 @@ export const getMessages = async (req, res) => {
 
     const allowed = await isParticipant(contextType, contextId, req.user.id);
     if (!allowed) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "You are not part of this conversation.",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "You are not part of this conversation.",
+      });
     }
 
     const messages = await Message.find({ contextType, contextId })
@@ -48,7 +71,6 @@ export const getMessages = async (req, res) => {
       { $addToSet: { readBy: req.user.id } },
     );
 
-    // Ensure _id is always a plain string in the response
     const shaped = messages.map((m) => {
       const obj = m.toObject();
       if (obj.sender && obj.sender._id) {
@@ -78,12 +100,10 @@ export const sendMessage = async (req, res) => {
 
     const allowed = await isParticipant(contextType, contextId, req.user.id);
     if (!allowed) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "You are not part of this conversation.",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "You are not part of this conversation.",
+      });
     }
 
     const message = await Message.create({
@@ -99,9 +119,54 @@ export const sendMessage = async (req, res) => {
       "_id name photoUrl role",
     );
 
-    // Shape sender _id to string
     const obj = populated.toObject();
     if (obj.sender?._id) obj.sender._id = obj.sender._id.toString();
+
+    // Push notification to all other participants
+    try {
+      const senderName = obj.sender?.name || "Someone";
+      const messagePreview = text.trim().length > 80
+        ? text.trim().slice(0, 80) + "..."
+        : text.trim();
+
+      // Build context label for the notification
+      let contextLabel = "your chat";
+      if (contextType === "carpool") {
+        const ride = await CarpoolRoute.findById(contextId);
+        if (ride) contextLabel = `${ride.origin.area} → ${ride.destination.area}`;
+      } else if (contextType === "parking") {
+        const booking = await Booking.findById(contextId).populate("spotId", "title");
+        if (booking?.spotId?.title) contextLabel = booking.spotId.title;
+      }
+
+      // Get all other participant IDs
+      const otherIds = await getOtherParticipants(contextType, contextId, req.user.id);
+
+      // Send push to each participant
+      await Promise.all(
+        otherIds.map(async (userId) => {
+          try {
+            const recipient = await User.findById(userId).select("+fcmToken");
+            if (!recipient) return;
+            await sendPush(
+              recipient._id,
+              recipient?.fcmToken,
+              `New message from ${senderName}`,
+              messagePreview,
+              "chat_message",
+              {
+                contextType,
+                contextId: contextId.toString(),
+              },
+            );
+          } catch (e) {
+            console.warn(`Push to user ${userId} failed:`, e.message);
+          }
+        }),
+      );
+    } catch (pushErr) {
+      console.warn("Chat push notification failed:", pushErr.message);
+    }
 
     return res.status(201).json({ success: true, data: obj });
   } catch (err) {
