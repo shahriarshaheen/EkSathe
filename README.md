@@ -26,7 +26,7 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 | SOS Panic Button (F-11)                | Complete    |
 | Firebase Push Notification (F-12)      | Complete    |
 | Live Trip Sharing (F-13)               | Complete    |
-| Homeowner Announcement (F-14)          | Complete    |
+| Route Deviation Alert (F-14)           | Complete    |
 | Admin Moderation Dashboard (F-15)      | Complete    |
 | Coins and Leaderboard (F-16)           | Complete    |
 | Coupons and Discounts (F-17)           | Complete    |
@@ -36,41 +36,6 @@ EkSathe (meaning "Together" in Bengali) is a university-focused smart mobility p
 
 ---
 
-## Project Status
-
-| Module                                     | Status       |
-| ------------------------------------------ | ------------ |
-| Authentication System                      | ✅ Complete  |
-| Role-based Dashboards                      | ✅ Complete  |
-| University Email Restriction               | ✅ Complete  |
-| Student ID Verification (Admin)            | ✅ Complete  |
-| Profile Photo & Edit Page                  | ✅ Complete  |
-| Parking Spot Listing (F-01)                | ✅ Complete  |
-| Interactive Map View (F-02)                | ✅ Complete  |
-| Booking Calendar System (F-03)             | ✅ Complete  |
-| SSLCommerz Payment (F-04)                  | ✅ Complete  |
-| Homeowner Earnings Dashboard (F-05)        | ✅ Complete  |
-| Post Carpool Route + Map Picker (F-06)     | ✅ Complete  |
-| Ride Discovery & Smart Browse (F-07)       | ✅ Complete  |
-| Trust & Rating System (F-08)               | ✅ Complete  |
-| In-Ride & Booking Chat (F-09)              | ✅ Complete  |
-| Anonymous Incident Reporting (F-10)        | ✅ Complete  |
-| SOS Panic Button (F-11)                    | ✅ Complete  |
-| Rider Trust Profile (F-12)                 | ✅ Complete  |
-| Live Trip Sharing (F-13)                   | ✅ Complete  |
-| Homeowner Announcements (F-14)             | ✅ Complete  |
-| Admin Moderation Dashboard (F-15)          | ✅ Complete  |
-| Coins & Leaderboard (F-16)                 | ✅ Complete  |
-| Coupons & Discounts (F-17)                 | ✅ Complete  |
-| Time-Based Check-In (F-18)                 | ✅ Complete  |
-| Advanced Search & Filter (F-19)            | ✅ Complete  |
-| Cost Cutting Calculator (F-20)             | ✅ Complete  |
-| Firebase Push Notifications                | ✅ Complete  |
-| Route Deviation Alert                      | ✅ Complete  |
-| Admin Coupon Management                    | ✅ Complete  |
-| Admin User Management (Suspend/Reinstate)  | ✅ Complete  |
-
----
 
 ## Project Structure
 
